@@ -1,6 +1,6 @@
 
 import os.path as osp
-from pytk.util.external.uicutils import compileUiDirToPyDir
-import pytk.core.ui
+from pytd.util.external.uicutils import compileUiDirToPyDir
+import pytd.core.ui
 
-compileUiDirToPyDir(osp.dirname(__file__), osp.dirname(pytk.core.ui.__file__))
+compileUiDirToPyDir(osp.dirname(__file__), osp.dirname(pytd.core.ui.__file__))

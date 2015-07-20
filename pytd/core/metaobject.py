@@ -1,9 +1,9 @@
 
-from pytk.util.logutils import logMsg
-from pytk.util.sysutils import argToTuple, getCaller
-from pytk.util.sysutils import toStr
-# from pytk.util.sysutils import getCaller
-from pytk.util.strutils import upperFirst, lowerFirst
+from pytd.util.logutils import logMsg
+from pytd.util.sysutils import argToTuple, getCaller
+from pytd.util.sysutils import toStr
+# from pytd.util.sysutils import getCaller
+from pytd.util.strutils import upperFirst, lowerFirst
 
 from .metaproperty import BasePropertyFactory
 

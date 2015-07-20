@@ -1,9 +1,9 @@
 
 import inspect as insp
 
-from pytk.util.sysutils import deepCopyOf, copyOf
-from pytk.util.sysutils import listClassesFromModule
-from pytk.util.fsutils import pathJoin
+from pytd.util.sysutils import deepCopyOf, copyOf
+from pytd.util.sysutils import listClassesFromModule
+from pytd.util.fsutils import pathJoin
 
 class PyConfParser(object):
 

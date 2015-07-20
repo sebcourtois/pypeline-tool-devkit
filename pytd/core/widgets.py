@@ -1,7 +1,7 @@
 
 from PySide import QtGui
 
-from pytk.util.sysutils import toUnicode
+from pytd.util.sysutils import toUnicode
 
 class ImageButton(QtGui.QPushButton):
 

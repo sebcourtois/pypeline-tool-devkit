@@ -4,11 +4,11 @@ import functools
 from PySide import QtGui
 SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
 
-from pytk.core.itemviews.utils import createAction
-from pytk.core.dialogs import confirmDialog
+from pytd.core.itemviews.utils import createAction
+from pytd.core.dialogs import confirmDialog
 
-from pytk.util.sysutils import toStr, inDevMode
-from pytk.util.logutils import logMsg
+from pytd.util.sysutils import toStr, inDevMode
+from pytd.util.logutils import logMsg
 
 class BaseContextMenu(QtGui.QMenu):
 

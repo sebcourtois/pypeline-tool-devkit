@@ -1,8 +1,8 @@
 
 from PySide import QtGui
 
-#from pytk.util.logutils import logMsg
-from pytk.util.sysutils import getCaller
+#from pytd.util.logutils import logMsg
+from pytd.util.sysutils import getCaller
 
 class BaseSelectionModel(QtGui.QItemSelectionModel):
 

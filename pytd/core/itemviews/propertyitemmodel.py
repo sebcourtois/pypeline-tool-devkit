@@ -2,12 +2,12 @@
 from PySide import QtGui
 from PySide.QtCore import Qt
 
-from pytk.util.logutils import logMsg
-from pytk.util.sysutils import toUnicode, toStr
-from pytk.util.strutils import labelify
-from pytk.util.qtutils import setWaitCursor
+from pytd.util.logutils import logMsg
+from pytd.util.sysutils import toUnicode, toStr
+from pytd.util.strutils import labelify
+from pytd.util.qtutils import setWaitCursor
 
-from pytk.core.metaproperty import EditState as Eds
+from pytd.core.metaproperty import EditState as Eds
 
 from .utils import ItemUserFlag
 from .utils import ItemUserRole

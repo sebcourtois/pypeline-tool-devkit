@@ -5,9 +5,9 @@ import datetime
 from PySide.QtCore import Qt, SIGNAL
 from PySide import QtGui
 
-from pytk.util.sysutils import toUnicode
-from pytk.util.sysutils import MemSize
-from pytk.util.sysutils import isIterable
+from pytd.util.sysutils import toUnicode
+from pytd.util.sysutils import MemSize
+from pytd.util.sysutils import isIterable
 
 
 class ItemUserFlag:

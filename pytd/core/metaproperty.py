@@ -1,5 +1,5 @@
 from functools import partial
-from pytk.util.sysutils import copyOf
+from pytd.util.sysutils import copyOf
 
 class EditState:
     Disabled = 0

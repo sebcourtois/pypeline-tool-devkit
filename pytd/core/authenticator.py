@@ -1,7 +1,7 @@
 
 from getpass import getpass
 
-from pytk.util.sysutils import isQtApp
+from pytd.util.sysutils import isQtApp
 from .dialogs import loginDialog
 
 

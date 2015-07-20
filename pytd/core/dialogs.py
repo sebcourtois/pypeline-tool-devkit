@@ -4,7 +4,7 @@ from PySide import QtGui
 from PySide import QtCore
 Qt = QtCore.Qt
 
-from pytk.util.sysutils import toUnicode
+from pytd.util.sysutils import toUnicode
 
 from .ui.login_dialog import Ui_LoginDialog
 

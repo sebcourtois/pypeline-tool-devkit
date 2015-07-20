@@ -18,7 +18,7 @@ try:
 except ImportError:
     from urllib.parse import quote as urlquote, quote_from_bytes as urlquote_from_bytes
 
-from pytk.util.sysutils import getCaller
+from pytd.util.sysutils import getCaller
 
 try:
     intern = intern
