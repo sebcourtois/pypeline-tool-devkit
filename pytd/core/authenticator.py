@@ -2,7 +2,7 @@
 from getpass import getpass
 
 from pytd.util.sysutils import isQtApp
-from .dialogs import loginDialog
+from pytd.gui.dialogs import loginDialog
 
 
 class Authenticator(object):

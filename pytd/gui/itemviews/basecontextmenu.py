@@ -4,8 +4,8 @@ import functools
 from PySide import QtGui
 SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
 
-from pytd.core.itemviews.utils import createAction
-from pytd.core.dialogs import confirmDialog
+from pytd.gui.itemviews.utils import createAction
+from pytd.gui.dialogs import confirmDialog
 
 from pytd.util.sysutils import toStr, inDevMode
 from pytd.util.logutils import logMsg
