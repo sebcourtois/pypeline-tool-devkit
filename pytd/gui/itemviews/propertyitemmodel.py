@@ -68,7 +68,8 @@ class PropertyItem(QtGui.QStandardItem):
     def loadData(self, metaprpty):
 
         self.setData(toDisplayText(metaprpty.getattr_()), Qt.DisplayRole)
-        self.setData(getattr(self._metaobj.__class__, "classUiPriority", 0), ItemUserRole.SortGroupRole)
+        self.setData(getattr(self._metaobj.__class__, "classUiPriority", 0),
+                     ItemUserRole.SortGroupRole)
 
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
@@ -82,7 +83,7 @@ class PropertyItem(QtGui.QStandardItem):
             metaobj = self._metaobj
             if metaobj:
                 if metaobj.setPrpty(self.propertyName, value):
-                    self.updateData()
+                    metaobj.refresh()
                     self.emitDataChanged()
         else:
             return QtGui.QStandardItem.setData(self, value, role)

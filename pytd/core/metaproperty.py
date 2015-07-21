@@ -1,5 +1,8 @@
+
 from functools import partial
-from pytd.util.sysutils import copyOf
+
+from pytd.util.logutils import logMsg
+from pytd.util.sysutils import copyOf, argToList
 
 class EditState:
     Disabled = 0
@@ -25,8 +28,8 @@ class MetaProperty(object):
         self.type = propertyDct["type"]
         self.__isMulti = propertyDct.get("isMulti", False)
 
-        self.defaultValue = [] if self.__isMulti else copyOf(propertyDct.get("default", "undefined"))
-
+        value = copyOf(propertyDct.get("default", "undefined"))
+        self.defaultValue = argToList(value) if self.__isMulti else value
 
         sAccessor = propertyDct.get("accessor", "")
         self._accessor = sAccessor
@@ -46,32 +49,36 @@ class MetaProperty(object):
 
         self._metaobj = metaobj
 
-        self.accessored = False
+        self.__accessorOk = False
 
         self.name = sProperty
         self.propertyDct = propertyDct
 
     def initAccessors(self, create=False):
 
-        if self.accessored:
+        if self.__accessorOk:
             return True
 
         sAccessor = self._accessor
         if not sAccessor:
+            logMsg("No accessor defined: '{}'".format(sAccessor), log='debug')
             return False
 
-        self._accessor = getattr(self._metaobj, sAccessor)
-
-        if (not self._accessor) and self.__lazy:
+        accessor = getattr(self._metaobj, sAccessor)
+        if (not accessor) and self.__lazy:
             if create:
                 accessor = self.createAccessor()
-                setattr(self._metaobj, sAccessor, accessor)
-                self._accessor = accessor
-
-            if not self._accessor:
+                if accessor:
+                    setattr(self._metaobj, sAccessor, accessor)
+                else:
+                    raise RuntimeError("Could not create accessor for {}".format(self))
+            else:
                 return False
 
-        self.accessored = True
+        if accessor:
+            self._accessor = accessor
+
+        self.__accessorOk = True
 
         return True
 
@@ -103,7 +110,9 @@ class MetaProperty(object):
         return True
 
     def isReadable(self):
+
         bReadable = self.__readable and self.initAccessors()
+
         if bReadable and (not self.__read):
             sReader = self._reader
             if '(' in sReader:
@@ -117,8 +126,6 @@ class MetaProperty(object):
 
     def read(self):
 
-#        print self._reader, self.__read
-
         reader = self._reader
         if reader:
             value = self.__read(reader)
@@ -128,7 +135,9 @@ class MetaProperty(object):
         return value
 
     def isWritable(self):
+
         bWritable = self.__writable and self.initAccessors(create=True)
+
         if bWritable and (not self.__write):
             sWriter = self._writer
             if '(' in sWriter:
@@ -141,8 +150,6 @@ class MetaProperty(object):
         return bWritable
 
     def write(self, value):
-
-#        print self._writer, self.__write
 
         writer = self._writer
         if writer:

@@ -82,7 +82,7 @@ class MetaObject(object):
                         return False
                 else:
                     logMsg(u"<{}> Writing to non-writable property: {}.{} ."
-                           .format(getCaller(), self, metaprpty.name), warning=True)
+                           .format(getCaller(fo=0), self, metaprpty.name), warning=True)
 
             setattr(self, metaprpty.name, value)
 
@@ -200,7 +200,7 @@ class MetaObject(object):
                     bSuccess = metaprpty.write(value)
                 else:
                     logMsg(u"<{}> Writing to non-writable property: {}.{} ."
-                           .format(getCaller(), self, metaprpty.name), warning=True)
+                           .format(getCaller(fo=0), self, metaprpty.name), warning=True)
                     bSuccess = True
 
             if not bSuccess:

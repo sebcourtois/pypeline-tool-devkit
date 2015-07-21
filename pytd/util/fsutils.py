@@ -14,6 +14,7 @@ from .sysutils import toUnicode, argToList
 # from .strutils import getIteration, padded
 from .logutils import logMsg
 
+
 def isDirStat(statobj):
     return stat.S_ISDIR(statobj.st_mode)
 
@@ -86,7 +87,7 @@ def iterPaths(sRootDirPath, **kwargs):
 
         if bDirs:
             for sDir in sDirNames:
-                yield addTrailingSlash(pathJoin(sDirPath, sDir))
+                yield addEndSlash(pathJoin(sDirPath, sDir))
 
         if ignoreFilesFunc is not None:
             sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
@@ -99,7 +100,7 @@ def iterPaths(sRootDirPath, **kwargs):
 
                 yield pathJoin(sDirPath, sFileName)
 
-def addTrailingSlash(sDirPath):
+def addEndSlash(sDirPath):
     return sDirPath if sDirPath.endswith("/") else sDirPath + "/"
 
 def commonDir(sPathList):
@@ -137,8 +138,8 @@ def copyTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
         # import cryptUtil
         sEncryptExtList = list(e.strip(".") for e in sEncryptExtList)
 
-    sSrcRootDir = addTrailingSlash(pathNorm(in_sSrcRootDir))
-    sDestRootDir = addTrailingSlash(pathNorm(in_sDestRootDir))
+    sSrcRootDir = addEndSlash(pathNorm(in_sSrcRootDir))
+    sDestRootDir = addEndSlash(pathNorm(in_sDestRootDir))
 
     if not osp.isdir(sSrcRootDir):
         raise ValueError, 'No such directory found: "{0}"'.format(sSrcRootDir)
@@ -168,7 +169,7 @@ def copyTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
         iMaxPathLen = 0
         for i, sFilePath in enumerate(sFilePathList):
 
-            sSrcDir = addTrailingSlash(pathNorm(osp.dirname(sFilePath)))
+            sSrcDir = addEndSlash(pathNorm(osp.dirname(sFilePath)))
 
             sRexpList = srcRootDirRexp.findall(sSrcDir)
             if not sRexpList:
