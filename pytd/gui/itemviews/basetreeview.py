@@ -8,10 +8,11 @@ from PySide.QtCore import Qt
 from .utils import ItemUserFlag
 from .baseproxymodel import BaseProxyModel
 from .propertyitemmodel import PropertyItemModel
+from .baseitemdelegate import BaseItemDelegate
 
 class BaseTreeView(QtGui.QTreeView):
 
-    itemDelegateClass = QtGui.QStyledItemDelegate
+    itemDelegateClass = BaseItemDelegate
     proxyModelClass = BaseProxyModel
     itemModelClass = PropertyItemModel
 
@@ -32,6 +33,8 @@ class BaseTreeView(QtGui.QTreeView):
         self.setItemDelegate(self.__class__.itemDelegateClass(self))
         self.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
         self.setTextElideMode(Qt.ElideRight)
+
+        self.setItemHeight(16)
 
 #        self.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
 #        self.setDropIndicatorShown(True)
@@ -342,6 +345,10 @@ class BaseTreeView(QtGui.QTreeView):
 
     def setExpanded(self, index, bExpand):
         return QtGui.QTreeView.setExpanded(self, self.mappedIdx(index), bExpand)
+
+    def setItemHeight(self, height):
+        self.setIconSize(QtCore.QSize(height, height))
+        self.itemHeight = height
 
     def wasAnItemPressed(self):
 
