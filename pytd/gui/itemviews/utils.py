@@ -1,14 +1,15 @@
 
-
+import os.path as osp
 import datetime
+import subprocess
 
 from PySide.QtCore import Qt, SIGNAL
 from PySide import QtGui
 
 from pytd.util.sysutils import toUnicode
-from pytd.util.sysutils import MemSize
+from pytd.util.utiltypes import MemSize
 from pytd.util.sysutils import isIterable
-
+from pytd.gui.dialogs import confirmDialog
 
 class ItemUserFlag:
     MultiEditable = Qt.ItemFlag(128)
@@ -82,3 +83,22 @@ def toEditText(value, sep=", "):
         return toUnicode(value)
 
 
+def showPathInExplorer(sPath, isFile=False):
+
+    sNormPath = osp.normpath(sPath)
+
+    if not osp.exists(sNormPath):
+
+        sPathTarget = "file" if isFile else "directory"
+
+        confirmDialog(title='SORRY !'
+                    , message='No such {0} found: \n\n{1}'.format(sPathTarget, sNormPath)
+                    , button=['OK']
+                    , icon="critical")
+        return False
+
+    sCmd = "explorer /select, {0}" if isFile else "explorer {0}"
+    sCmd = sCmd.format(sNormPath)
+    subprocess.Popen(sCmd, shell=True)
+
+    return True

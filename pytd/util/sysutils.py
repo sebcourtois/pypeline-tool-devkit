@@ -6,11 +6,11 @@ from collections import Iterable
 import copy
 import inspect
 from functools import partial
-import math
-import string
 
 import locale
 import codecs
+
+from .utiltypes import TdModuleFinder
 
 LOCALE_ENCODING = locale.getlocale()[1]
 if not LOCALE_ENCODING:
@@ -42,54 +42,11 @@ def timer(func):
         return ret
 
     return closure
+
 ''
-#-------------------------------------------------------------------------------
-#    Converting
-#-------------------------------------------------------------------------------
-
-
-class MemSize(long):
-    """ define a size class to allow custom formatting
-        format specifiers supported : 
-            em : formats the size as bits in IEC format i.e. 1024 bits (128 bytes) = 1Kib 
-            eM : formats the size as Bytes in IEC format i.e. 1024 bytes = 1KiB
-            sm : formats the size as bits in SI format i.e. 1000 bits = 1kb
-            sM : formats the size as bytes in SI format i.e. 1000 bytes = 1KB
-            cm : format the size as bit in the common format i.e. 1024 bits (128 bytes) = 1Kb
-            cM : format the size as bytes in the common format i.e. 1024 bytes = 1KB
-    """
-    def __format__(self, fmt):
-        # is it an empty format or not a special format for the size class
-        if fmt == "" or fmt[-2:].lower() not in ["em", "sm", "cm"]:
-            if fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'n', 'e', 'f', 'g', '%']:
-                # Numeric format.
-                return long(self).__format__(fmt)
-            else:
-                return str(self).__format__(fmt)
-
-        # work out the scale, suffix and base
-        factor, suffix = (8, "b") if fmt[-1] in string.lowercase else (1, "B")
-        base = 1024 if fmt[-2] in ["e", "c"] else 1000
-
-        # Add the i for the IEC format
-        suffix = "i" + suffix if fmt[-2] == "e" else suffix
-
-        mult = ["", "K", "M", "G", "T", "P"]
-
-        val = float(self) * factor
-        i = 0 if val < 1 else int(math.log(val, base)) + 1
-        v = val / math.pow(base, i)
-        v, i = (v, i) if v > 0.5 else (v * base, i - 1)
-
-        # Identify if there is a width and extract it
-        width = "" if fmt.find(".") == -1 else fmt[:fmt.index(".")]
-        precis = fmt[:-2] if width == "" else fmt[fmt.index("."):-2]
-
-        # do the precision bit first, so width/alignment works with the suffix
-        t = ("{0:{1}f} " + mult[i] + suffix).format(v, precis)
-
-        return "{0:{1}}".format(t, width) if width != "" else t
-
+#===============================================================================
+# Converting
+#===============================================================================
 
 def toStr(value):
 
@@ -160,9 +117,9 @@ def argToSet(arg):
     return _argToSequence(set, arg)
 
 ''
-#-------------------------------------------------------------------------------
-#    Functions
-#-------------------------------------------------------------------------------
+#===============================================================================
+# Functions
+#===============================================================================
 
 def getCaller(**kwargs):
 
@@ -224,6 +181,25 @@ def deepCopyOf(value):
     else:
         return value
 
+def isQtApp():
+
+    try:
+        from PySide import QtGui
+    except ImportError:
+        return False
+    else:
+        return (QtGui.qApp is not None)
+
+
+def inDevMode():
+    s = os.getenv("DEV_MODE_ENV", "0")
+    return eval(s) if s else False
+
+''
+#===============================================================================
+# Module utils
+#===============================================================================
+
 def importModule(sModuleName):
 
     __import__(sModuleName)
@@ -238,16 +214,26 @@ def listClassesFromModule(sModuleName):
 
     return inspect.getmembers(sys.modules[sModuleName], partial(isClassOfModule, sModuleName))
 
-def isQtApp():
+def reloadModule(m):
 
-    try:
-        from PySide import QtGui
-    except ImportError:
-        return False
-    else:
-        return (QtGui.qApp is not None)
+    if isinstance(m, basestring):
+        m = sys.modules[m]
+
+    sFile = m.__file__[:-1] if m.__file__.endswith(".pyc") else m.__file__
+
+    excluded = [ "Crypto", "git", "async", "PyQt4", "PySide", "MySQLdb",
+                "pymel", "maya" ]
+
+    finder = TdModuleFinder(debug=0, excludes=excluded)
+    finder.load_file(sFile)
+
+    print "\nReloading '{0}':".format(m.__name__)
+    for lm in finder.loadedModules[:-1]:
+        print "\t", lm.__name__
+        if lm.__name__ in sys.modules:
+            reload(sys.modules[lm.__name__])
+
+    print "\t", m.__name__
+    reload(m)
 
 
-def inDevMode():
-    s = os.getenv("DEV_MODE_ENV", "0")
-    return eval(s) if s else False

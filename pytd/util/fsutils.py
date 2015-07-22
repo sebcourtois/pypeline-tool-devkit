@@ -7,11 +7,8 @@ import fnmatch
 import json
 import stat
 import hashlib
-import subprocess
 
 from distutils import file_util
-
-from pytd.gui.dialogs import confirmDialog
 
 from .sysutils import toUnicode, argToList
 # from .strutils import getIteration, padded
@@ -289,22 +286,4 @@ def sha1HashFile(sFilePath, chunk_size=1024 * 8):
 
     return h.hexdigest()
 
-def showPathInExplorer(sPath, isFile=False):
 
-    sNormPath = osp.normpath(sPath)
-
-    if not osp.exists(sNormPath):
-
-        sPathTarget = "file" if isFile else "directory"
-
-        confirmDialog(title='SORRY !'
-                    , message='No such {0} found: \n\n{1}'.format(sPathTarget, sNormPath)
-                    , button=['OK']
-                    , icon="critical")
-        return False
-
-    sCmd = "explorer /select, {0}" if isFile else "explorer {0}"
-    sCmd = sCmd.format(sNormPath)
-    subprocess.Popen(sCmd, shell=True)
-
-    return True
