@@ -12,7 +12,9 @@ class BaseItemDelegate(QtGui.QStyledItemDelegate):
 
     def sizeHint(self, option, index):
         qSize = QtGui.QStyledItemDelegate.sizeHint(self, option, index)
-        qSize.setHeight(option.decorationSize.height())
+        h = option.decorationSize.height()
+        if h > qSize.height():
+            qSize.setHeight(h)
         return qSize
 
     def __repr__(self):

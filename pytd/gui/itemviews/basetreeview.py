@@ -347,7 +347,8 @@ class BaseTreeView(QtGui.QTreeView):
         return QtGui.QTreeView.setExpanded(self, self.mappedIdx(index), bExpand)
 
     def setItemHeight(self, height):
-        self.setIconSize(QtCore.QSize(height, height))
+        if height >= 16:
+            self.setIconSize(QtCore.QSize(height, height))
         self.itemHeight = height
 
     def wasAnItemPressed(self):
