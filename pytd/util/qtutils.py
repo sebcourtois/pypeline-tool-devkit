@@ -4,14 +4,14 @@ from PySide.QtCore import Qt, QFileInfo
 from PySide import QtGui
 
 
-__qTransformModeDct = {
+_qTransformModeDct = {
 "fast":Qt.FastTransformation,
 "smooth":Qt.SmoothTransformation
 }
 
 def clampPixmapSize(pixmap, iLimitSize, mode="fast"):
 
-    qMode = __qTransformModeDct[mode]
+    qMode = _qTransformModeDct[mode]
 
     if pixmap.height() > iLimitSize:
         pixmap = pixmap.scaledToHeight(iLimitSize, qMode)

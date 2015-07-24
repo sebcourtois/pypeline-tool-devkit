@@ -15,8 +15,8 @@ class ItemUserFlag:
     MultiEditable = Qt.ItemFlag(128)
 
 class ItemUserRole:
-    ThumbnailRole = Qt.UserRole + 1
-    SortGroupRole = Qt.UserRole + 2
+    ImageRole = Qt.UserRole + 1
+    GroupSortRole = Qt.UserRole + 2
 
 def createAction(text, parentWidget, **kwargs):
 

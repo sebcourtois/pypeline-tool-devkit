@@ -18,8 +18,12 @@ class PropertyIconProvider(object):
     def __init__(self):
         pass
 
-    def icon(self, metaprpty):
-        return QtGui.QIcon()
+    def icon(self, value):
+        return QtGui.QIcon(value)
+
+    def image(self, value):
+        img = QtGui.QPixmap(value)
+        return img
 
 class PropertyItem(QtGui.QStandardItem):
 
@@ -69,13 +73,23 @@ class PropertyItem(QtGui.QStandardItem):
 
         self.setData(toDisplayText(metaprpty.getattr_()), Qt.DisplayRole)
         self.setData(getattr(self._metaobj.__class__, "classUiPriority", 0),
-                     ItemUserRole.SortGroupRole)
+                     ItemUserRole.GroupSortRole)
 
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
             if provider:
-                icon = provider.icon(metaprpty)
+
+                iconSrc = metaprpty.iconSource()
+                icon = provider.icon(iconSrc)
+
+                image = provider.image(metaprpty.imageSource())
+                if image.isNull():
+                    image = icon
+                else:
+                    icon.addPixmap(image)
+
                 self.setData(icon, Qt.DecorationRole)
+                self.setData(image, ItemUserRole.ImageRole)
 
     def setData(self, value, role=Qt.EditRole):
 

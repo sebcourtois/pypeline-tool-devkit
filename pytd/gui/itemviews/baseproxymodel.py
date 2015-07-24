@@ -3,7 +3,7 @@ from PySide import QtGui
 from PySide.QtCore import Qt
 
 from .utils import ItemUserRole
-SortGroupRole = ItemUserRole.SortGroupRole
+GroupSortRole = ItemUserRole.GroupSortRole
 
 class BaseProxyModel(QtGui.QSortFilterProxyModel):
 
@@ -29,8 +29,8 @@ class BaseProxyModel(QtGui.QSortFilterProxyModel):
 
     def lessThan(self, leftIndex, rightIndex):
 
-        l = leftIndex.data(SortGroupRole)
-        r = rightIndex.data(SortGroupRole)
+        l = leftIndex.data(GroupSortRole)
+        r = rightIndex.data(GroupSortRole)
 
         if l != r:
             sortedOrder = self.sortOrder()
