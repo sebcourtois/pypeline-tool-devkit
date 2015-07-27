@@ -16,6 +16,33 @@ class ImageButton(QtGui.QPushButton):
         self.setIcon(icon)
 
 
+class ToolBar(QtGui.QToolBar):
+
+    def __init__(self, parent):
+        super(ToolBar, self).__init__(parent)
+        self.__actDataCache = {}
+        self.__clearingUp = False
+
+    def setActionData(self, action, value):
+
+        pyId = id(value)
+        self.__actDataCache[pyId] = value
+
+        action.setData(pyId)
+
+    def actionData(self, action):
+        pyId = action.data()
+        return self.__actDataCache.get(pyId)
+
+    def clear(self):
+
+        self.__clearingUp = True
+        try:
+            QtGui.QToolBar.clear(self)
+            self.__actDataCache.clear()
+        finally:
+            self.__clearingUp = False
+
 class TabBar(QtGui.QTabBar):
 
     def __init__(self, parent):
@@ -25,7 +52,7 @@ class TabBar(QtGui.QTabBar):
 
         self.setExpanding(False)
 
-    def setTabData(self, idx, value):
+    def sestTabData(self, idx, value):
 
         pyId = id(value)
         self.__tabDataCache[pyId] = value
