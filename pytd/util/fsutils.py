@@ -35,8 +35,14 @@ def pathJoin(*args):
 
     return pathNorm(p)
 
-def pathResolve(p):
-    return pathNorm(osp.expanduser(osp.expandvars(p)))
+def pathResolve(p, recursive=True):
+
+    rp = pathNorm(osp.expanduser(osp.expandvars(p)))
+
+    if recursive and (rp != p) and re.findall(r'[%$]', rp):
+        return pathResolve(rp)
+
+    return rp
 
 def pathSuffixed(sFileNameOrPath, *suffixes):
 
