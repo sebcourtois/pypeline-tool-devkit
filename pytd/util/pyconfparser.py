@@ -1,17 +1,20 @@
 
+import re
 import inspect as insp
 
 from pytd.util.sysutils import deepCopyOf, copyOf
 from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin
 
+_SECTION_RGX = re.compile(r"{([\w]+)\.")
+
 class PyConfParser(object):
 
     def __init__(self, pyobj, predefVarParams=None):
 
-        bLoadSection = False
+        bLoadSections = False
         if insp.ismodule(pyobj):
-            bLoadSection = True
+            bLoadSections = True
         elif insp.isclass(pyobj):
             pass
         else:
@@ -27,7 +30,7 @@ class PyConfParser(object):
         self.declareVarsFromTree()
         self.checkPredefVars(predefVarParams)
 
-        if bLoadSection:
+        if bLoadSections:
             self.loadSections()
 
         if self._errosOnInit:
@@ -94,9 +97,12 @@ class PyConfParser(object):
             if sConfVar:
                 sConfVar = sConfVar.strip()
 
-                sDefinedPath = getattr(pyobj, sConfVar, None)
+                sDefinedPath = pyobj.__dict__.get(sConfVar, None)#getattr(pyobj, sConfVar, None)
                 if sDefinedPath is None:
                     setattr(pyobj, sConfVar, sPath)
+                    sPathVars = getattr(pyobj, "path_vars", [])
+                    sPathVars.append(sConfVar)
+                    setattr(pyobj, "path_vars", sPathVars)
                 else:
                     msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sDefinedPath)
                     self._errosOnInit.append(msg)
@@ -110,6 +116,21 @@ class PyConfParser(object):
         for sTreeVar in dir(self._pyobj):
             if sTreeVar.endswith("_tree"):
                 self.recurseTreeVars(getattr(self._pyobj, sTreeVar), "")
+
+    def hasVar(self, sSection, sVarName):
+        return self.getSection(sSection)._sectionHasVar(sVarName)
+
+    def getVar(self, sSection, sVarName, default="NoEntry", **kwargs):
+        value = self.getSection(sSection)._getSectionVar(sVarName, default, **kwargs)
+
+        if isinstance(value, basestring):
+
+            sSectionSet = set(_SECTION_RGX.findall(value))
+            if sSectionSet:
+                sections = dict((s, getattr(self._pyobj, s)) for s in sSectionSet)
+                return value.format(**sections)
+
+        return value
 
     def _getSectionVar(self, sVarName, default="NoEntry", **kwargs):
 
@@ -131,8 +152,9 @@ class PyConfParser(object):
 
         return copyOf(value)
 
-    def getVar(self, sSection, sVarName, default="NoEntry", **kwargs):
-        return self.getSection(sSection)._getSectionVar(sVarName, default, **kwargs)
+    def _sectionHasVar(self, sVarName):
+        return hasattr(self._pyobj, sVarName)
+
 
     def loadSections(self):
 
