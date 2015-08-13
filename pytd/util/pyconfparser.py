@@ -32,6 +32,8 @@ class PyConfParser(object):
 
         if bLoadSections:
             self.loadSections()
+#            for k, v in self.__sections.iteritems():
+#                print k, v
 
         if self._errosOnInit:
             raise ImportError(self.formatedErrors(self._errosOnInit))
@@ -100,9 +102,9 @@ class PyConfParser(object):
                 sDefinedPath = pyobj.__dict__.get(sConfVar, None)#getattr(pyobj, sConfVar, None)
                 if sDefinedPath is None:
                     setattr(pyobj, sConfVar, sPath)
-                    sPathVars = getattr(pyobj, "path_vars", [])
+                    sPathVars = getattr(pyobj, "all_path_vars", [])
                     sPathVars.append(sConfVar)
-                    setattr(pyobj, "path_vars", sPathVars)
+                    setattr(pyobj, "all_path_vars", sPathVars)
                 else:
                     msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sDefinedPath)
                     self._errosOnInit.append(msg)
@@ -155,11 +157,22 @@ class PyConfParser(object):
     def _sectionHasVar(self, sVarName):
         return hasattr(self._pyobj, sVarName)
 
-
     def loadSections(self):
 
+        sections = self.__sections
+
         for sSection, sectionCls in listClassesFromModule(self._pyobj.__name__):
-            self.__sections[sSection] = PyConfParser(sectionCls)
+
+            parser = PyConfParser(sectionCls)
+            sections[sSection] = parser
+
+            sAliasList = getattr(sectionCls, "aliases", ())
+            for sAlias in sAliasList:
+
+                if sAlias in sections:
+                    raise RuntimeError("Section alias already used: '{}'".format(sAlias))
+
+                sections[sAlias] = parser
 
     def getSection(self, sSectionName):
 
