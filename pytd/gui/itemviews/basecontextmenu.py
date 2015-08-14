@@ -1,5 +1,6 @@
 
 import functools
+import inspect as insp
 
 from PySide import QtGui
 SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
@@ -153,7 +154,8 @@ class BaseContextMenu(QtGui.QMenu):
 
     def iterAllowedActions(self, prptyItem):
 
-        sTypeName = type(prptyItem._metaobj).__name__
+        cls = prptyItem._metaobj.__class__
+        sMroList = tuple(c.__name__ for c in insp.getmro(cls))
 
         for actionDct in self.createdActionConfigs:
 
@@ -165,8 +167,11 @@ class BaseContextMenu(QtGui.QMenu):
             allowedTypes = getattr(fnc, "auth_types", None)
             if not allowedTypes:
                 yield qAction
-            elif sTypeName in allowedTypes:
-                yield qAction
+            else:
+                for sTypeName in sMroList:
+                    if sTypeName in allowedTypes:
+                        yield qAction
+                        break
 
     def updateVisibilities(self):
 
