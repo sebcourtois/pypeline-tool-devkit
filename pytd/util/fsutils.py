@@ -10,6 +10,7 @@ import hashlib
 
 from distutils import file_util
 
+from .external import parse
 from .sysutils import toUnicode, argToList
 # from .strutils import getIteration, padded
 from .logutils import logMsg
@@ -55,6 +56,36 @@ def pathSuffixed(sFileNameOrPath, *suffixes):
 
 def pathRel(*args):
     return pathNorm(osp.relpath(*args))
+
+def pathParsed(sPathFormat, sPath):
+
+    fmtDirs = pathSplitDirs(sPathFormat)
+    pDirs = pathSplitDirs(sPath)
+
+    fmtLen = len(fmtDirs)
+    pLen = len(pDirs)
+
+    minLen = min(fmtLen, pLen)
+
+    fmt = pathJoin(*fmtDirs[1:minLen])
+    s = pathJoin(*pDirs[1:minLen])
+
+    return parse.parse(fmt, s)
+
+def pathSplitDirs(p):
+    p = pathNorm(p)
+
+    if p.startswith("//"):
+        root, p = osp.splitunc(p)
+    else:
+        root, p = osp.splitdrive(p)
+
+    p = p.strip("/")
+
+    res = [root] if root else []
+    res.extend(p.split("/"))
+
+    return res
 
 def ignorePatterns(*patterns):
     """Function that can be used as iterPaths() ignore parameters.

@@ -200,6 +200,13 @@ def inDevMode():
 # Module utils
 #===============================================================================
 
+def importClass(sFullName, globals=None, locals=None):
+
+    sMod, sClass = sFullName.rsplit(".", 1)
+    sImport = "from {} import {}".format(sMod, sClass)
+    exec(sImport, globals, locals)
+    return eval(sClass, globals, locals)
+
 def importModule(sModuleName):
 
     __import__(sModuleName)

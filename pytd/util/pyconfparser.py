@@ -102,9 +102,9 @@ class PyConfParser(object):
                 sDefinedPath = pyobj.__dict__.get(sConfVar, None)#getattr(pyobj, sConfVar, None)
                 if sDefinedPath is None:
                     setattr(pyobj, sConfVar, sPath)
-                    sPathVars = getattr(pyobj, "all_path_vars", [])
+                    sPathVars = getattr(pyobj, "all_tree_vars", [])
                     sPathVars.append(sConfVar)
-                    setattr(pyobj, "all_path_vars", sPathVars)
+                    setattr(pyobj, "all_tree_vars", sPathVars)
                 else:
                     msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sDefinedPath)
                     self._errosOnInit.append(msg)
@@ -161,7 +161,7 @@ class PyConfParser(object):
 
         sections = self.__sections
 
-        for sSection, sectionCls in listClassesFromModule(self._pyobj.__name__):
+        for sSection, sectionCls in self.listSections():
 
             parser = PyConfParser(sectionCls)
             sections[sSection] = parser
@@ -173,6 +173,10 @@ class PyConfParser(object):
                     raise RuntimeError("Section alias already used: '{}'".format(sAlias))
 
                 sections[sAlias] = parser
+
+
+    def listSections(self):
+        return listClassesFromModule(self._pyobj.__name__)
 
     def getSection(self, sSectionName):
 
