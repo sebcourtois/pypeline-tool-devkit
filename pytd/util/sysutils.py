@@ -1,5 +1,6 @@
 
 import os
+import os.path as osp
 import sys
 import time
 from collections import Iterable
@@ -194,6 +195,11 @@ def isQtApp():
 def inDevMode():
     s = os.getenv("DEV_MODE_ENV", "0")
     return eval(s) if s else False
+
+def hostApp():
+    p, _ = osp.splitext(sys.executable)
+    app = osp.dirname(p).lower()
+    return "" if app == "python" else app
 
 ''
 #===============================================================================
