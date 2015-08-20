@@ -191,7 +191,6 @@ def isQtApp():
     else:
         return (QtGui.qApp is not None)
 
-
 def inDevMode():
     s = os.getenv("DEV_MODE_ENV", "0")
     return eval(s) if s else False
@@ -200,6 +199,29 @@ def hostApp():
     p, _ = osp.splitext(sys.executable)
     app = osp.basename(p).lower()
     return "" if app == "python" else app
+
+def updEnv(sVar, value, conflict="add"):
+
+    opts = ('add', 'over', 'keep', 'fail')
+    if conflict not in opts:
+        raise ValueError("Invalid value for 'conflict' arg: '{}'. Try {}"
+                         .format(conflict, opts))
+
+    newValue = value
+    sMsg = " - set {} : {}".format(sVar, value)
+    if sVar in os.environ:
+        if conflict == "keep":
+            return
+        elif conflict == "fail":
+            raise EnvironmentError("Env. variable already defined: '{}'='{}'"
+                                   .format(sVar, os.environ[sVar]))
+        elif conflict == 'add':
+            prevValue = os.environ[sVar]
+            newValue = os.pathsep.join((prevValue, value)) if prevValue else value
+            sMsg = sMsg.replace("set", "add")
+
+    print sMsg
+    os.environ[sVar] = newValue
 
 ''
 #===============================================================================
