@@ -198,7 +198,7 @@ def inDevMode():
 
 def hostApp():
     p, _ = osp.splitext(sys.executable)
-    app = osp.dirname(p).lower()
+    app = osp.basename(p).lower()
     return "" if app == "python" else app
 
 ''
@@ -206,12 +206,12 @@ def hostApp():
 # Module utils
 #===============================================================================
 
-def importClass(sFullName, globals=None, locals=None):
+def importClass(sFullName, in_globals=None, in_locals=None):
 
     sMod, sClass = sFullName.rsplit(".", 1)
     sImport = "from {} import {}".format(sMod, sClass)
-    exec(sImport, globals, locals)
-    return eval(sClass, globals, locals)
+    exec(sImport, in_globals, in_locals)
+    return eval(sClass, in_globals, in_locals)
 
 def importModule(sModuleName):
 
