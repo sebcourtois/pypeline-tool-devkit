@@ -55,7 +55,7 @@ def compileUiDirToPyDir(sUiSrcDir, sPyDestDir, recurse=False):
     from functools import partial
 
     def uiToPy(sPyFilesDir, sUiFilesDir, sPyFileName):
-        return sPyFilesDir, sPyFileName
+        return sPyFilesDir, "ui_" + sPyFileName
 
     compileUiDir(sUiSrcDir, mapper=partial(uiToPy, sPyDestDir), recurse=recurse)
 
