@@ -174,7 +174,6 @@ class PyConfParser(object):
 
                 sections[sAlias] = parser
 
-
     def listSections(self):
         return listClassesFromModule(self._pyobj.__name__)
 
@@ -184,8 +183,9 @@ class PyConfParser(object):
         try:
             return sections[sSectionName]
         except KeyError:
-            msg = u"<{}> No such section: '{}'. \n\n\tExpected values: {}".format(self, sSectionName, sections.keys())
-            raise KeyError(msg)
+            msg = (u"<{}> No such section: '{}'.\n\nTry: {}"
+                   .format(self, sSectionName, sorted(sections.iterkeys())))
+            raise EnvironmentError(msg)
 
     def formatedErrors(self, sErrorList):
         return 'Failed initializing {0}: \n\t{1}'.format(self, "\n\t".join(sErrorList))

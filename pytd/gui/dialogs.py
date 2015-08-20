@@ -4,7 +4,7 @@ from PySide import QtGui
 from PySide import QtCore
 Qt = QtCore.Qt
 
-from pytd.util.sysutils import toUnicode
+from pytd.util.sysutils import toUnicode, toStr
 
 from .ui.login_dialog import Ui_LoginDialog
 
@@ -297,7 +297,19 @@ class LoginDialog(QtGui.QDialog, Ui_LoginDialog):
 
         res = None
         if self.submitSlot:
-            res = self.submitSlot(sUser, sPwd)
+
+            try:
+                res = self.submitSlot(sUser, sPwd)
+            except Exception, err:
+                confirmDialog(title='SORRY !'
+                            , message=toStr(err)
+                            , button=["OK"]
+                            , defaultButton="OK"
+                            , cancelButton="OK"
+                            , dismissString="OK"
+                            , icon="critical")
+                raise
+
         elif sUser and sPwd:
             res = (sUser, sPwd)
 

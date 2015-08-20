@@ -79,7 +79,7 @@ class BaseContextMenu(QtGui.QMenu):
 
         self.assertActionSelection()
 
-        sActionMsg = "'{}'>'{}'".format(actionDct["menu"], actionDct["label"])
+        sActionMsg = u"Action: {} > {}".format(actionDct["menu"], actionDct["label"])
         try:
             logMsg(u'# Action: {} #'.format(sActionMsg))
         except Exception, e:
@@ -92,7 +92,7 @@ class BaseContextMenu(QtGui.QMenu):
         try:
             return func(*args, **kwargs)
         except Exception, err:
-            sMsg = "Could not launch {} : \n\n> ".format(sActionMsg)
+            sMsg = u"{}\n\n".format(sActionMsg)
             confirmDialog(title='SORRY !'
                         , message=sMsg + toStr(err)
                         , button=["OK"]
