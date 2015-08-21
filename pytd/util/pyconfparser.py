@@ -5,6 +5,7 @@ import inspect as insp
 from pytd.util.sysutils import deepCopyOf, copyOf
 from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin
+from pytd.util.strutils import findFields
 
 _SECTION_RGX = re.compile(r"{([\w]+)\.")
 
@@ -94,24 +95,40 @@ class PyConfParser(object):
                 sDirName = sDirVar
                 sConfVar = ""
 
-            sPath = pathJoin(sStartPath, sDirName.strip())
+            sCurPath = pathJoin(sStartPath, sDirName.strip())
 
             if sConfVar:
                 sConfVar = sConfVar.strip()
 
-                sDefinedPath = pyobj.__dict__.get(sConfVar, None)#getattr(pyobj, sConfVar, None)
-                if sDefinedPath is None:
+                sPath = pyobj.__dict__.get(sConfVar, None)
+                if sPath is None:
+
+                    sPath = sCurPath
+
+                    if "=" in sPath:
+                        tokens = {}
+                        for f in set(findFields(sPath)):
+                            if '=' not in f:
+                                continue
+                            k, v = f.split("=")
+                            tokens[k.strip()] = v.strip()
+
+                            sPath = sPath.replace(f, k)
+
+                        setattr(pyobj, sConfVar + "_tokens", tokens)
+
                     setattr(pyobj, sConfVar, sPath)
                     sPathVars = getattr(pyobj, "all_tree_vars", [])
                     sPathVars.append(sConfVar)
                     setattr(pyobj, "all_tree_vars", sPathVars)
+
                 else:
-                    msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sDefinedPath)
+                    msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sPath)
                     self._errosOnInit.append(msg)
                     continue
 
             if childDct:
-                self.recurseTreeVars(childDct, sPath, parentConf)
+                self.recurseTreeVars(childDct, sCurPath, parentConf)
 
     def declareVarsFromTree(self):
 
@@ -123,6 +140,7 @@ class PyConfParser(object):
         return self.getSection(sSection)._sectionHasVar(sVarName)
 
     def getVar(self, sSection, sVarName, default="NoEntry", **kwargs):
+
         value = self.getSection(sSection)._getSectionVar(sVarName, default, **kwargs)
 
         if isinstance(value, basestring):

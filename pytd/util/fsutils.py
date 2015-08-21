@@ -57,7 +57,7 @@ def pathSuffixed(sFileNameOrPath, *suffixes):
 def pathRel(*args):
     return pathNorm(osp.relpath(*args))
 
-def pathParsed(sPathFormat, sPath):
+def pathParse(sPathFormat, sPath):
 
     fmtDirs = pathSplitDirs(sPathFormat)
     pDirs = pathSplitDirs(sPath)
