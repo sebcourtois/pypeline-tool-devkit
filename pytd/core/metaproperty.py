@@ -22,15 +22,14 @@ def setattr_(*args):
 class MetaProperty(object):
 
     parameterDefaults = (
-    ("isMulti", False),
-    ("default", "undefined"),
-    ("accessor", ""),
-    ("reader", ""),
-    ("writer", ""),
-    ("copyable", False),
-    ("lazy", False),
-    ("stored", True),
-                       )
+        ("isMulti", False),
+        ("default", "undefined"),
+        ("copyable", False),
+        ("lazy", False),
+        ("accessor", ""),
+        ("reader", ""),
+        ("writer", ""),
+    )
 
 
     def __init__(self , sProperty, metaobj):
@@ -47,22 +46,38 @@ class MetaProperty(object):
         value = copyOf(propertyDct.get("default", "undefined"))
         self.defaultValue = argToList(value) if self.__isMulti else value
 
+        self.__copyable = propertyDct["copyable"]
+        self.__lazy = propertyDct["lazy"]
+
         sAccessor = propertyDct["accessor"]
         self._accessor = sAccessor
 
         sReader = propertyDct["reader"]
         self.__readable = True if sReader else False
-        self._reader = sReader
-        self.__read = None
+        if '(' in sReader:
+            sFunc, sAttr = sReader.split('(', 1)
+            self._readAttr = sAttr.strip(')')
+            self.__read = sFunc
+        else:
+            self._readAttr = sReader
+            self.__read = ""
+
+        propertyDct["readable"] = self.__readable
 
         sWriter = propertyDct["writer"]
-        self.__writable = True if sWriter else False
-        self._writer = sWriter
-        self.__write = None
+        bWritable = True if sWriter else False
+        if '(' in sWriter:
+            sFunc, sAttr = sWriter.split('(', 1)
+            self.storageName = sAttr.strip(')')
+            self.__write = sFunc
+        else:
+            self.storageName = sWriter
+            self.__write = ""
 
-        self.__copyable = propertyDct["copyable"]
-        self.__lazy = propertyDct["lazy"]
-        self.__stored = propertyDct["stored"]
+        propertyDct["writable"] = bWritable
+        propertyDct["stored"] = True if bWritable and self.storageName else False
+
+        self.__writable = bWritable
 
         self._metaobj = metaobj
 
@@ -124,7 +139,7 @@ class MetaProperty(object):
         return self.__lazy
 
     def isStored(self):
-        return self.__stored
+        return self.__writable and self.storageName
 
     def isValidValue(self, value):
         return True
@@ -133,11 +148,9 @@ class MetaProperty(object):
 
         bReadable = self.__readable and self.initAccessors()
 
-        if bReadable and (not self.__read):
-            sReader = self._reader
-            if '(' in sReader:
-                sFunc, sAttr = sReader.split('(', 1)
-                self._reader = sAttr.strip(')')
+        if bReadable and isinstance(self.__read, basestring):
+            sFunc = self.__read
+            if sFunc:
                 self.__read = getattr(self._accessor, sFunc)
             else:
                 self.__read = partial(getattr, self._accessor)
@@ -146,9 +159,9 @@ class MetaProperty(object):
 
     def read(self):
 
-        reader = self._reader
-        if reader:
-            value = self.__read(reader)
+        sAttr = self._readAttr
+        if sAttr:
+            value = self.__read(sAttr)
         else:
             value = self.__read()
 
@@ -158,11 +171,9 @@ class MetaProperty(object):
 
         bWritable = self.__writable and self.initAccessors(create=True)
 
-        if bWritable and (not self.__write):
-            sWriter = self._writer
-            if '(' in sWriter:
-                sFunc, sAttr = sWriter.split('(', 1)
-                self._writer = sAttr.strip(')')
+        if bWritable and isinstance(self.__write, basestring):
+            sFunc = self.__write
+            if sFunc:
                 self.__write = getattr(self._accessor, sFunc)
             else:
                 self.__write = partial(setattr_, self._accessor)
@@ -171,9 +182,9 @@ class MetaProperty(object):
 
     def write(self, value):
 
-        writer = self._writer
-        if writer:
-            bStatus = self.__write(writer, value)
+        sAttr = self.storageName
+        if sAttr:
+            bStatus = self.__write(sAttr, value)
         else:
             bStatus = self.__write(value)
 

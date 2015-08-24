@@ -211,6 +211,26 @@ class MetaObject(object):
         sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
         return dict((p, self.getPrpty(p)) for p in sPropertyIter)
 
+    def getStoredValues(self, propertyNames=None):
+
+        sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
+
+        values = {}
+
+        for sProperty in sPropertyIter:
+            metaprpty = self.__metaProperties[sProperty]
+
+            if not metaprpty.isStored():
+                continue
+
+            sName = metaprpty.storageName
+            if not sName:
+                raise RuntimeError("{}")
+
+            values[sName] = self.getPrpty(sProperty)
+
+        return values
+
     def copyValuesFrom(self, srcobj):
 
         sPropertyList = []
