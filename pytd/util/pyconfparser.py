@@ -24,6 +24,7 @@ class PyConfParser(object):
                     .format(type(pyobj)))
 
         self._pyobj = pyobj
+        self.name = pyobj.__name__
 
         self._errosOnInit = []
         self.__sections = {}
@@ -211,7 +212,7 @@ class PyConfParser(object):
     def __repr__(self):
 
         try:
-            sRepr = ("{0}({1})".format(self.__class__.__name__, self._pyobj.__name__))
+            sRepr = ("{0}({1})".format(self.__class__.__name__, self.name))
         except:
             sRepr = object.__repr__(self)
 
