@@ -21,31 +21,48 @@ def setattr_(*args):
 
 class MetaProperty(object):
 
+    parameterDefaults = (
+    ("isMulti", False),
+    ("default", "undefined"),
+    ("accessor", ""),
+    ("reader", ""),
+    ("writer", ""),
+    ("copyable", False),
+    ("lazy", False),
+    ("stored", True),
+                       )
+
+
     def __init__(self , sProperty, metaobj):
 
         propertyDct = metaobj.__class__.propertiesDct[sProperty]
 
+        for sParam, value in self.__class__.parameterDefaults:
+            if sParam not in propertyDct:
+                propertyDct[sParam] = value
+
         self.type = propertyDct["type"]
-        self.__isMulti = propertyDct.get("isMulti", False)
+        self.__isMulti = propertyDct["isMulti"]
 
         value = copyOf(propertyDct.get("default", "undefined"))
         self.defaultValue = argToList(value) if self.__isMulti else value
 
-        sAccessor = propertyDct.get("accessor", "")
+        sAccessor = propertyDct["accessor"]
         self._accessor = sAccessor
 
-        sReader = propertyDct.get("reader", "")
+        sReader = propertyDct["reader"]
         self.__readable = True if sReader else False
         self._reader = sReader
         self.__read = None
 
-        sWriter = propertyDct.get("writer", "")
+        sWriter = propertyDct["writer"]
         self.__writable = True if sWriter else False
         self._writer = sWriter
         self.__write = None
 
-        self.__copyable = propertyDct.get("copyable", False)
-        self.__lazy = propertyDct.get("lazy", False)
+        self.__copyable = propertyDct["copyable"]
+        self.__lazy = propertyDct["lazy"]
+        self.__stored = propertyDct["stored"]
 
         self._metaobj = metaobj
 
@@ -105,6 +122,9 @@ class MetaProperty(object):
 
     def isLazy(self):
         return self.__lazy
+
+    def isStored(self):
+        return self.__stored
 
     def isValidValue(self, value):
         return True
