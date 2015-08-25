@@ -172,27 +172,29 @@ class MetaObject(object):
 
             value = getattr(self, sProperty)
 
-            bWriteOnly = False
+            bWriteOnly = True
+            msg = ""
 
-            sSetFnc = "set" + upperFirst(sProperty)
-            setFnc = getattr(self, sSetFnc, None)
-
-            msg = u"Setting {0}.{1} to {2}( {3} ) using {4}".format(
-                    self, sProperty, type(value).__name__, toStr(value), setFnc if setFnc else "setPrpty")
-            logMsg(msg, log="debug")
-
-            bSuccess = False
-            if setFnc:
-                try:
-                    bSuccess = setFnc(value, writingAttrs=True)
-                except TypeError:
-                    try:
-                        bSuccess = setFnc(value)
-                    except Exception, msg:
-                        logMsg(msg , warning=True)
-                        bWriteOnly = True
-            else:
-                bWriteOnly = True
+#            sSetFnc = "set" + upperFirst(sProperty)
+#            setFnc = getattr(self, sSetFnc, None)
+#
+#            msg = u"Setting {0}.{1} to {2}( {3} ) using {4}".format(
+#                    self, sProperty, type(value).__name__, toStr(value),
+#                    setFnc if setFnc else "setPrpty")
+#            logMsg(msg, log="debug")
+#
+#            bSuccess = False
+#            if setFnc:
+#                try:
+#                    bSuccess = setFnc(value, writingAttrs=True)
+#                except TypeError:
+#                    try:
+#                        bSuccess = setFnc(value)
+#                    except Exception, msg:
+#                        logMsg(msg , warning=True)
+#                        bWriteOnly = True
+#            else:
+#                bWriteOnly = True
 
             if bWriteOnly:
                 metaprpty = self.__metaProperties[sProperty]
