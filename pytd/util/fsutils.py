@@ -72,6 +72,9 @@ def pathParse(sPathFormat, sPath):
 
     return parse.parse(fmt, s)
 
+def pathStripDrive(p):
+    return pathJoin(*pathSplitDirs(p)[1:])
+
 def pathSplitDirs(p):
     p = pathNorm(p)
 
