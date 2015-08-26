@@ -114,6 +114,8 @@ def iterPaths(sRootDirPath, **kwargs):
     ignoreDirsFunc = kwargs.get("ignoreDirs", None)
     ignoreFilesFunc = kwargs.get("ignoreFiles", None)
 
+    filterFilesFunc = kwargs.get("filterFiles", None)
+
     for sDirPath, sDirNames, sFileNames in os.walk(sRootDirPath):
 
         if not bRecursive:
@@ -129,11 +131,24 @@ def iterPaths(sRootDirPath, **kwargs):
             for sDir in sDirNames:
                 yield addEndSlash(pathJoin(sDirPath, sDir))
 
-        if ignoreFilesFunc is not None:
-            sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
-
         if bFiles:
+
+            bFilter = False
+            sFilterFiles = []
+            if filterFilesFunc is not None:
+                sFilterFiles = filterFilesFunc(sDirPath, sFileNames)
+                #print "sFilterFiles", sFilterFiles, sFileNames
+                bFilter = True
+
+            sIgnoredFiles = []
+            if ignoreFilesFunc is not None:
+                sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
+                #print "sIgnoredFiles", sIgnoredFiles
+
             for sFileName in sFileNames:
+
+                if bFilter and (sFileName not in sFilterFiles):
+                    continue
 
                 if sFileName in sIgnoredFiles:
                     continue
