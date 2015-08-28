@@ -1,8 +1,7 @@
 
 
 from PySide import QtGui
-from PySide import QtCore
-Qt = QtCore.Qt
+from PySide.QtCore import Signal, Qt
 
 from pytd.util.sysutils import toUnicode, toStr
 
@@ -10,7 +9,7 @@ from .ui.login_dialog import Ui_LoginDialog
 
 class ConfirmDialog(QtGui.QMessageBox):
 
-    buttonChoice = QtCore.Signal(str)
+    buttonChoice = Signal(str)
 
     iconDct = {
             "question": QtGui.QMessageBox.Question,
@@ -102,7 +101,7 @@ def confirmDialog(**kwargs):
 
 class PromptDialog(QtGui.QDialog):
 
-    buttonChoice = QtCore.Signal(str)
+    buttonChoice = Signal(str)
 
     def __init__(self, **kwargs):
 
@@ -272,7 +271,7 @@ def promptDialog(**kwargs):
 
 class LoginDialog(QtGui.QDialog, Ui_LoginDialog):
 
-    loginSubmitted = QtCore.Signal(unicode, unicode)
+    loginSubmitted = Signal(unicode, unicode)
 
     __resultData = None
 
