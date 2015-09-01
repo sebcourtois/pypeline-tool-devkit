@@ -7,7 +7,7 @@ import maya.cmds as mc
 
 from pytd.util.logutils import logMsg
 from pytd.util.fsutils import pathResolve
-from pytd.util.sysutils import listForNone
+from pytd.util.sysutils import listForNone, argToTuple
 
 def importFile(sFilePath, **kwargs):
 
@@ -63,7 +63,7 @@ def importFile(sFilePath, **kwargs):
         bNewFile = True if sConfirm == "New Scene" else False
 
     if bNewFile:
-        if newFile(**kwargs) == '_cancelled_':
+        if newScene(**kwargs) == '_cancelled_':
             return '_cancelled_'
 
     if bReference:
@@ -105,25 +105,30 @@ def getMayaFileTypeFromExtension(sFilePath):
 
     return sType
 
-def chooseMayaFile(**kwargs):
+def chooseMayaScene(**kwargs):
 
-    sInputType = kwargs.pop("type", kwargs.pop("typ", ""))
+    fileFilters = kwargs.pop("fileFilter", kwargs.pop("ff", "mayaScene"))
+    sFileFilters = argToTuple(fileFilters)
 
-    sInputTypeDct = {
-                    "mayaAscii": "Maya ASCII (*.ma)",
-                    "mayaBinary": "Maya Binary (*.mb)"
-                    }
+    sFilterDct = {
+                "mayaScene":"Maya Scenes (*.ma *.mb)",
+                "mayaAscii": "Maya ASCII (*.ma)",
+                "mayaBinary": "Maya Binary (*.mb)",
+                }
 
-    sFileFilter = sInputTypeDct.get(sInputType, "Maya Binary (*.mb);;Maya ASCII (*.ma)")
+    sFileFilters = tuple(sFilterDct.get(ff, ff) for ff in sFileFilters)
+    sFileFilter = ";;".join(sFileFilters)
 
-    kwargs.pop("fileFilter", None)
-    kwargs.pop("dialogStyle", None)
+    sSelFilter = kwargs.pop("selectFileFilter", kwargs.pop("sff", sFileFilters[0]))
 
-    bSelFilter = kwargs.get("selectFileFilter", "Maya ASCII (*.ma)") if not sInputType else None
+    kwargs.pop("dialogStyle", kwargs.pop("ds", 2))
 
-    return pm.fileDialog2(fileFilter=sFileFilter, dialogStyle=2, selectFileFilter=bSelFilter, **kwargs)
+    return pm.fileDialog2(fileFilter=sFileFilter,
+                          dialogStyle=2,
+                          selectFileFilter=sSelFilter,
+                          **kwargs)
 
-def saveFile(**kwargs):
+def saveScene(**kwargs):
 
     sFileType = mc.file(q=True, type=True)
 
@@ -190,7 +195,7 @@ def saveFile(**kwargs):
 
         if sCurntScenePath == "untitled scene":
 
-            sFileList = chooseMayaFile(type=sWantedFileType)
+            sFileList = chooseMayaScene(type=sWantedFileType)
             if not sFileList:
                 return "_cancelled_"
 
@@ -206,12 +211,12 @@ def saveFile(**kwargs):
 
             return pm.saveFile(force=bForce, type=sFileType)
 
-def newFile(**kwargs):
+def newScene(**kwargs):
 
     bForce = kwargs.get("force", kwargs.get("f", False))
 
     if not bForce:
-        sSavedFile = saveFile()
+        sSavedFile = saveScene()
     else:
         sSavedFile = "newFileForced"
 
@@ -220,7 +225,7 @@ def newFile(**kwargs):
 
     return sSavedFile
 
-def openFile(*args, **kwargs):
+def openScene(*args, **kwargs):
 
     if kwargs.pop("noFileCheck", True):
         pmu.putEnv("DAM_FILE_CHECK", "")
