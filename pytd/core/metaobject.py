@@ -40,7 +40,8 @@ class MetaObject(object):
             metaprpty = self.__metaProperties[sProperty]
             if metaprpty.isReadable():
                 setattr(self, metaprpty.name, metaprpty.read())
-
+            elif metaprpty.isLazy():
+                setattr(self, metaprpty.name, metaprpty.defaultValue)
 
     def metaProperty(self, sProperty):
         return self.__metaProperties.get(sProperty)

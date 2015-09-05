@@ -50,17 +50,20 @@ class MetaProperty(object):
         self.__lazy = propertyDct["lazy"]
 
         sAccessor = propertyDct["accessor"]
-        self._accessor = sAccessor
+        self.accessorName = sAccessor
+        self._accessor = None
+        self.__readFunc = None
+        self.__writeFunc = None
 
         sReader = propertyDct["reader"]
         self.__readable = True if sReader else False
         if '(' in sReader:
             sFunc, sAttr = sReader.split('(', 1)
             self._readAttr = sAttr.strip(')')
-            self.__read = sFunc
+            self.readerName = sFunc
         else:
             self._readAttr = sReader
-            self.__read = ""
+            self.readerName = ""
 
         propertyDct["readable"] = self.__readable
 
@@ -69,10 +72,10 @@ class MetaProperty(object):
         if '(' in sWriter:
             sFunc, sAttr = sWriter.split('(', 1)
             self.storageName = sAttr.strip(')')
-            self.__write = sFunc
+            self.writerName = sFunc
         else:
             self.storageName = sWriter
-            self.__write = ""
+            self.writerName = ""
 
         propertyDct["writable"] = bWritable
         propertyDct["stored"] = True if bWritable and self.storageName else False
@@ -81,38 +84,42 @@ class MetaProperty(object):
 
         self._metaobj = metaobj
 
-        self.__accessorOk = False
-
         self.name = sProperty
         self.propertyDct = propertyDct
 
-    def initAccessors(self, create=False):
+    def initAccessor(self, create=False):
 
-        if self.__accessorOk:
+        bLazy = self.__lazy
+        curAccessor = self._accessor
+
+        if (not bLazy) and curAccessor:
             return True
 
-        sAccessor = self._accessor
+        sAccessor = self.accessorName
         if not sAccessor:
             logMsg("No accessor defined: '{}'".format(sAccessor), log='debug')
             return False
 
-        accessor = getattr(self._metaobj, sAccessor)
-        if (not accessor) and self.__lazy:
+        newAccessor = getattr(self._metaobj, sAccessor)
+        if newAccessor:
+            if id(newAccessor) != id(curAccessor):
+                self.__readFunc = None
+                self.__writeFunc = None
+        elif bLazy:
+            self.__readFunc = None
+            self.__writeFunc = None
             if create:
-                accessor = self.createAccessor()
-                if accessor:
-                    setattr(self._metaobj, sAccessor, accessor)
+                newAccessor = self.createAccessor()
+                if newAccessor:
+                    setattr(self._metaobj, sAccessor, newAccessor)
                 else:
                     raise RuntimeError("Could not create accessor for {}".format(self))
             else:
                 return False
 
-        if accessor:
-            self._accessor = accessor
+        self._accessor = newAccessor
 
-        self.__accessorOk = True
-
-        return True
+        return True if newAccessor else False
 
     def createAccessor(self):
         raise NotImplementedError("must be implemented in subclass")
@@ -146,14 +153,14 @@ class MetaProperty(object):
 
     def isReadable(self):
 
-        bReadable = self.__readable and self.initAccessors()
+        bReadable = self.__readable and self.initAccessor()
 
-        if bReadable and isinstance(self.__read, basestring):
-            sFunc = self.__read
+        if bReadable and (self.__readFunc is None):
+            sFunc = self.readerName
             if sFunc:
-                self.__read = getattr(self._accessor, sFunc)
+                self.__readFunc = getattr(self._accessor, sFunc)
             else:
-                self.__read = partial(getattr, self._accessor)
+                self.__readFunc = partial(getattr, self._accessor)
 
         return bReadable
 
@@ -161,22 +168,22 @@ class MetaProperty(object):
 
         sAttr = self._readAttr
         if sAttr:
-            value = self.__read(sAttr)
+            value = self.__readFunc(sAttr)
         else:
-            value = self.__read()
+            value = self.__readFunc()
 
         return value
 
     def isWritable(self):
 
-        bWritable = self.__writable and self.initAccessors(create=True)
+        bWritable = self.__writable and self.initAccessor(create=True)
 
-        if bWritable and isinstance(self.__write, basestring):
-            sFunc = self.__write
+        if bWritable and (self.__writeFunc is None):
+            sFunc = self.writerName
             if sFunc:
-                self.__write = getattr(self._accessor, sFunc)
+                self.__writeFunc = getattr(self._accessor, sFunc)
             else:
-                self.__write = partial(setattr_, self._accessor)
+                self.__writeFunc = partial(setattr_, self._accessor)
 
         return bWritable
 
@@ -184,9 +191,9 @@ class MetaProperty(object):
 
         sAttr = self.storageName
         if sAttr:
-            bStatus = self.__write(sAttr, value)
+            bStatus = self.__writeFunc(sAttr, value)
         else:
-            bStatus = self.__write(value)
+            bStatus = self.__writeFunc(value)
 
         if not isinstance(bStatus, bool):
             sWriter = self.propertyDct["writer"]
