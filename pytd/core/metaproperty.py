@@ -78,7 +78,13 @@ class MetaProperty(object):
             self.writerName = ""
 
         propertyDct["writable"] = bWritable
-        propertyDct["stored"] = True if bWritable and self.storageName else False
+
+        if "stored" in propertyDct:
+            bStored = propertyDct["stored"]
+        else:
+            bStored = True if (bWritable and self.storageName) else False
+            propertyDct["stored"] = bStored
+        self.__stored = bStored
 
         self.__writable = bWritable
 
@@ -146,7 +152,7 @@ class MetaProperty(object):
         return self.__lazy
 
     def isStored(self):
-        return self.__writable and self.storageName
+        return self.__stored
 
     def isValidValue(self, value):
         return True
@@ -187,7 +193,9 @@ class MetaProperty(object):
 
         return bWritable
 
-    def write(self, value):
+    def write(self, in_value):
+
+        value = self.castToWrite(in_value)
 
         sAttr = self.storageName
         if sAttr:
@@ -196,11 +204,19 @@ class MetaProperty(object):
             bStatus = self.__writeFunc(value)
 
         if not isinstance(bStatus, bool):
-            sWriter = self.propertyDct["writer"]
+            sFunc = self.writerName
             raise ValueError("Writer function must return a boolean: {}.{}"
-                             .format(self._accessor, sWriter))
+                             .format(self._accessor, sFunc))
 
         return bStatus
+
+    def castToWrite(self, in_value):
+
+        if in_value == "undefined":
+            raise ValueError("Bad value for {}.{}: '{}'."
+                   .format(self._metaobj, self.name, in_value))
+
+        return in_value
 
     def getattr_(self, *args):
         return getattr(self._metaobj, self.name, *args)

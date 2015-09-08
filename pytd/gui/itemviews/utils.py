@@ -40,7 +40,7 @@ def createAction(text, parentWidget, **kwargs):
 
 def toDisplayText(value, sep=", "):
 
-    if value in (None, False):
+    if value in (None, False, "undefined"):
         return ""
 
     elif value is True:
@@ -48,7 +48,7 @@ def toDisplayText(value, sep=", "):
 
     elif isinstance(value, datetime.date):
         try:
-            return value.strftime("%Y/%m/%d %H:%M")
+            return value.strftime("%Y-%m-%d %H:%M")
         except ValueError:
             return ""
 

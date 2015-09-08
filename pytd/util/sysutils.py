@@ -3,6 +3,7 @@ import os
 import os.path as osp
 import sys
 import time
+import calendar
 from collections import Iterable
 import copy
 import inspect
@@ -85,6 +86,17 @@ def toUtf8(value):
         value, _ = UTF8_CODEC.encode(value)
 
     return value
+
+def toTimestamp(dateTime, timeZone="local"):
+
+    if timeZone == "utc":
+        #convert utc time back to utc timestamp
+        iUtcStamp = calendar.timegm(dateTime.timetuple())
+    else:
+        #convert local time back to utc timestamp
+        iUtcStamp = time.mktime(dateTime.timetuple())
+
+    return iUtcStamp
 
 def listForNone(arg):
     return [] if arg is None else arg

@@ -214,7 +214,7 @@ class MetaObject(object):
         sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
         return dict((p, self.getPrpty(p)) for p in sPropertyIter)
 
-    def getStoredValues(self, propertyNames=None):
+    def dataToStore(self, propertyNames=None):
 
         sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
 
@@ -230,7 +230,7 @@ class MetaObject(object):
             if not sName:
                 raise RuntimeError("{}")
 
-            values[sName] = self.getPrpty(sProperty)
+            values[sName] = metaprpty.castToWrite(self.getPrpty(sProperty))
 
         return values
 
