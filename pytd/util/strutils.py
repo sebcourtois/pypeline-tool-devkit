@@ -1,5 +1,6 @@
 
 import re
+from pytd.util.sysutils import toStr
 
 _iterativePartRgx = re.compile('_\d+_(?=\D)|\d+$')
 _trailingNumRgx = re.compile('([0-9]+)$')
@@ -131,4 +132,18 @@ def getIteration(in_sName, **kwargs):
 def getTrailingNum(in_sName, **kwargs):
     return getNumPart(in_sName, part="trailing", **kwargs)
 
+def assertChars(sWord, sRegexp):
+
+    sErrorMsg = ""
+
+    sInvalidChars = re.sub(sRegexp, "", sWord)
+    if sInvalidChars:
+
+        sInvalidChars = ", ".join("'{0}'".format(toStr(c)) for c in set(sInvalidChars))
+        sErrorMsg += ('\t- contains invalid characters: {0}\n\n'
+                      .format(sInvalidChars.replace("' '", "'space'")))
+
+    if sErrorMsg:
+        sErrorMsg = 'Invalid string: "{0}"\n'.format(toStr(sWord)) + sErrorMsg
+        raise AssertionError, sErrorMsg
 
