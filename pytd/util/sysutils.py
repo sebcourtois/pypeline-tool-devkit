@@ -7,6 +7,7 @@ import calendar
 from collections import Iterable
 import copy
 import inspect
+import subprocess
 from functools import partial
 
 import locale
@@ -22,9 +23,10 @@ if not LOCALE_ENCODING:
 LOCALE_CODEC = codecs.lookup(LOCALE_ENCODING)
 UTF8_CODEC = codecs.lookup("utf-8")
 
-#-------------------------------------------------------------------------------
-#    Decorators
-#-------------------------------------------------------------------------------
+''
+#===============================================================================
+# Decorators
+#===============================================================================
 
 def timer(func):
 
@@ -47,7 +49,7 @@ def timer(func):
 
 ''
 #===============================================================================
-# Converting
+# Convertion
 #===============================================================================
 
 def toStr(value):
@@ -131,8 +133,26 @@ def argToSet(arg):
 
 ''
 #===============================================================================
-# Functions
+# Others
 #===============================================================================
+
+CREATE_NO_WINDOW = 0x8000000
+
+def runCmd(cmd, shell=False, catchOutput=True, noCmdWindow=False):
+
+    iCreationFlags = CREATE_NO_WINDOW if noCmdWindow else 0
+
+    pipe = subprocess.Popen(cmd, shell=shell,
+                            stdout=subprocess.PIPE if catchOutput else None,
+                            stderr=subprocess.STDOUT if catchOutput else None,
+                            creationflags=iCreationFlags)
+
+    stdOut, stdErr = pipe.communicate()
+    if stdErr and stdErr.strip():
+        print cmd
+        raise subprocess.CalledProcessError(stdErr)
+
+    return stdOut
 
 def getCaller(**kwargs):
 
