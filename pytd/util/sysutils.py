@@ -138,21 +138,22 @@ def argToSet(arg):
 
 CREATE_NO_WINDOW = 0x8000000
 
-def runCmd(cmd, shell=False, catchOutput=True, noCmdWindow=False):
+def callCmd(cmdArgs, catchStdout=False, shell=False, inData=None, noCmdWindow=False):
 
     iCreationFlags = CREATE_NO_WINDOW if noCmdWindow else 0
 
-    pipe = subprocess.Popen(cmd, shell=shell,
-                            stdout=subprocess.PIPE if catchOutput else None,
-                            stderr=subprocess.STDOUT if catchOutput else None,
+    pipe = subprocess.Popen(cmdArgs, shell=shell,
+                            stdout=subprocess.PIPE if catchStdout else None,
+                            stderr=subprocess.STDOUT if catchStdout else None,
                             creationflags=iCreationFlags)
-
-    stdOut, stdErr = pipe.communicate()
-    if stdErr and stdErr.strip():
-        print cmd
-        raise subprocess.CalledProcessError(stdErr)
-
-    return stdOut
+    if catchStdout:
+        outData, errData = pipe.communicate(inData)
+        if errData and errData.strip():
+            print cmdArgs
+            raise subprocess.CalledProcessError(errData)
+        return outData
+    else:
+        return pipe.wait()
 
 def getCaller(**kwargs):
 
