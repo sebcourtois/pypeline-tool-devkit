@@ -233,31 +233,32 @@ def hostApp():
     app = osp.basename(p).lower()
     return "" if app == "python" else app
 
-def updEnv(sVar, value, conflict='replace'):
+def updEnv(sVar, in_value, conflict='replace'):
 
     opts = ('add', 'replace', 'keep', 'fail')
     if conflict not in opts:
         raise ValueError("Invalid value for 'conflict' arg: '{}'. Try {}"
                          .format(conflict, opts))
 
-    newValue = value
-    sMsg = " - set {} : '{}'".format(sVar, value)
+    newValue = in_value
+    sMsgFmt = " - {} {} : '{}'"
+    sAction = "set"
     if sVar in os.environ:
         if conflict == "keep":
-            sMsg = sMsg.replace("set", "keep")
-            print sMsg
             return
         elif conflict == "fail":
             raise EnvironmentError("Env. variable already defined: '{}'='{}'"
                                    .format(sVar, os.environ[sVar]))
         elif conflict == 'add':
             prevValue = os.environ[sVar]
-            newValue = os.pathsep.join((prevValue, value)) if prevValue else value
-            sMsg = sMsg.replace("set", "add")
+            if in_value in prevValue:
+                return
+            newValue = os.pathsep.join((prevValue, in_value)) if prevValue else in_value
+            sAction = "add"
         else:
-            sMsg = sMsg.replace("set", "upd")
+            sAction = "upd"
 
-    print sMsg
+    print sMsgFmt.format(sAction, sVar, in_value)
     os.environ[sVar] = newValue
 
 ''
