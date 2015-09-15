@@ -89,6 +89,13 @@ def toUtf8(value):
 
     return value
 
+def fromUtf8(value):
+
+    if isinstance(value, str):
+        return UTF8_CODEC.decode(value)[0]
+    else:#unicode
+        return UTF8_CODEC.encode(value)[0]
+
 def toTimestamp(dateTime, timeZone="local"):
 
     if timeZone == "utc":
