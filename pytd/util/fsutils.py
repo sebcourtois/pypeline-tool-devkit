@@ -54,7 +54,7 @@ def pathSuffixed(sFileNameOrPath, *suffixes):
 
     return "".join(sJoinList) + sExt
 
-def pathRel(*args):
+def pathRelativeTo(*args):
     return pathNorm(osp.relpath(*args))
 
 def pathParse(sPathFormat, sPath):
@@ -249,11 +249,11 @@ def copyTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
 
             if bCopied:
                 sCount = "{0}/{1}".format(iDoneFileCount, iNumFiles)
-                print sPrintFormat.format(sCount
-                                        , srcRootDirRexp.split(sFilePath, 1)[1]
-                                        , destRootDirRexp.split(sDestPath, 1)[1]
-                                        , width1=iCountLen
-                                        , width2=iMaxPathLen)
+                print sPrintFormat.format(sCount,
+                                          srcRootDirRexp.split(sFilePath, 1)[1],
+                                          destRootDirRexp.split(sDestPath, 1)[1],
+                                          width1=iCountLen,
+                                          width2=iMaxPathLen)
 
                 sCopiedFileList.append(sDestPath)
 
