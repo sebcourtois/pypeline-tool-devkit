@@ -10,13 +10,13 @@ class Authenticator(object):
     def __init__(self):
         self.authenticated = False
 
-    def loggedUser(self, *args, **kwargs):
+    def loggedUser(self):
         return {}
 
     def logIn(self, *args, **kwargs):
         return {}
 
-    def logOut(self, *args, **kwargs):
+    def logOut(self):
         return True
 
     def authenticate(self, **kwargs):
