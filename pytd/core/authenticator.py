@@ -43,5 +43,7 @@ class Authenticator(object):
 
         if userData:
             self.authenticated = True
+            print (u"{}: User '{}' authenticated successfully !"
+                   .format(self.__class__.__name__, userData["login"]))
 
         return userData
