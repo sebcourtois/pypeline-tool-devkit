@@ -20,7 +20,8 @@ class MemSize(long):
     def __format__(self, fmt):
         # is it an empty format or not a special format for the size class
         if fmt == "" or fmt[-2:].lower() not in ["em", "sm", "cm"]:
-            if fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'n', 'e', 'f', 'g', '%']:
+
+            if fmt and fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'n', 'e', 'f', 'g', '%']:
                 # Numeric format.
                 return long(self).__format__(fmt)
             else:

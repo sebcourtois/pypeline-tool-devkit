@@ -209,10 +209,10 @@ class MetaObject(object):
             if not bSuccess:
                 logMsg("Failed " + lowerFirst(msg), warning=True)
 
-    def getAllValues(self, propertyNames=None):
+    def iterDataItems(self, propertyNames=None):
 
         sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
-        return dict((p, self.getPrpty(p)) for p in sPropertyIter)
+        return ((p, self.getPrpty(p)) for p in sPropertyIter)
 
     def dataToStore(self, propertyNames=None):
 
@@ -323,6 +323,18 @@ class MetaObject(object):
         else:
             return propertyNames
 
+    def logData(self, *propertieNames):
+        print self.dataRepr(*propertieNames)
+
+    def dataRepr(self, *propertyNames):
+
+        if not propertyNames:
+            propertyNames = None
+
+        s = u'{'
+        for k, v in self.iterDataItems(propertyNames):
+            s += u"\n'{}': {} | {}".format(k, v, type(v))
+        return (s + u'\n}')
 
     def __repr__(self):
 
@@ -330,7 +342,7 @@ class MetaObject(object):
 
         try:
             sClsName = upperFirst(cls.classLabel) if hasattr(cls, "classLabel") else cls.__name__
-            sRepr = ("{0}('{1}')".format(sClsName, toStr(getattr(self, cls.classReprAttr))))
+            sRepr = (u"{0}('{1}')".format(sClsName, toStr(getattr(self, cls.classReprAttr))))
         except AttributeError:
             sRepr = cls.__name__
 
