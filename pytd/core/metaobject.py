@@ -69,30 +69,60 @@ class MetaObject(object):
         else:
             return getattr(self, sProperty, default)
 
-    def setPrpty(self, sProperty, value, write=True):
+
+    def setPrpty(self, sProperty, value, write=True, **kwargs):
+
+        bWithSetter = kwargs.get("withSetter", False)
+        sMsg = ""
+
+        setter = None
+        if bWithSetter:
+            sSetter = "set" + upperFirst(sProperty)
+            setter = getattr(self, sSetter, None)
+
+            sMsg = u"Setting {0}.{1} to {2}( {3} ) using {4}".format(
+                    self, sProperty, type(value).__name__, toStr(value),
+                    setter if setter else "_setPrpty")
+            logMsg(sMsg, log="debug")
+
+        bSuccess = False
+
+        if setter:
+            try:
+                bSuccess = setter(value, write=write)
+            except TypeError:
+                bSuccess = setter(value)
+        else:
+            bSuccess = self._setPrpty(sProperty, value, write=write)
+
+        if (not bSuccess) and sMsg:
+            logMsg("Failed " + lowerFirst(sMsg), warning=True)
+
+        return bSuccess
+
+    def _setPrpty(self, sProperty, value, write=True):
         logMsg(self.__class__.__name__, log='all')
 
         metaprpty = self.__metaProperties[sProperty]
 
-        if metaprpty.isValidValue(value):
-
-            if write:
-                if metaprpty.isWritable():
-                    bStatus = metaprpty.write(value)
-                    if not bStatus:
-                        return False
-                else:
-                    logMsg(u"<{}> Writing to non-writable property: {}.{} ."
-                           .format(getCaller(fo=0), self, metaprpty.name), warning=True)
-
-            setattr(self, metaprpty.name, value)
-
-            return True
-
-        else:
-            logMsg(" {0}.{1} : Invalid value : '{2}'"
+        if not metaprpty.isValidValue(value):
+            logMsg(u"{}.{} : Invalid value : '{}'"
                    .format(self, sProperty, value) , warning=True)
             return False
+
+        if write:
+            if metaprpty.isWritable():
+                bSuccess = metaprpty.write(value)
+                if not bSuccess:
+                    return False
+            else:
+                logMsg(u"<{}> Writing to non-writable property: {}.{} ."
+                       .format(getCaller(fo=0), self, metaprpty.name), warning=True)
+
+        setattr(self, metaprpty.name, value)
+
+        return True
+
 
     def iterPropertyNames(self, **params):
 
@@ -173,41 +203,11 @@ class MetaObject(object):
 
             value = getattr(self, sProperty)
 
-            bWriteOnly = True
-            msg = ""
+            try:
+                self.setPrpty(sProperty, value, write=True, withSetter=False)
+            except Exception, msg:
+                logMsg(toStr(msg), warning=True)
 
-#            sSetFnc = "set" + upperFirst(sProperty)
-#            setFnc = getattr(self, sSetFnc, None)
-#
-#            msg = u"Setting {0}.{1} to {2}( {3} ) using {4}".format(
-#                    self, sProperty, type(value).__name__, toStr(value),
-#                    setFnc if setFnc else "setPrpty")
-#            logMsg(msg, log="debug")
-#
-#            bSuccess = False
-#            if setFnc:
-#                try:
-#                    bSuccess = setFnc(value, writingAttrs=True)
-#                except TypeError:
-#                    try:
-#                        bSuccess = setFnc(value)
-#                    except Exception, msg:
-#                        logMsg(msg , warning=True)
-#                        bWriteOnly = True
-#            else:
-#                bWriteOnly = True
-
-            if bWriteOnly:
-                metaprpty = self.__metaProperties[sProperty]
-                if metaprpty.isWritable():
-                    bSuccess = metaprpty.write(value)
-                else:
-                    logMsg(u"<{}> Writing to non-writable property: {}.{} ."
-                           .format(getCaller(fo=0), self, metaprpty.name), warning=True)
-                    bSuccess = True
-
-            if not bSuccess:
-                logMsg("Failed " + lowerFirst(msg), warning=True)
 
     def iterDataItems(self, propertyNames=None):
 
