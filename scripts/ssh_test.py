@@ -15,7 +15,7 @@ def sshCopy():
         sshCli.set_missing_host_key_policy(WarningPolicy())
         sshCli.load_system_host_keys()
 
-        sshCli.connect("diskstation", 22, "sebcourtois", "z2kzombie")
+        sshCli.connect("ZOMBIWALK", 22, "sebcourtois", "z2kzombie")
         t = sshCli.get_transport()
 
 #        secOpt = t.get_security_options()

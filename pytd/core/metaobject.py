@@ -17,31 +17,38 @@ class MetaObject(object):
     presetByPropertyDct = {}
 
     propertyFactoryClass = BasePropertyFactory
+    propertyPerAccessorDct = None
 
     def __init__(self):
+
+        cls = self.__class__
+        if cls.propertyPerAccessorDct is None:
+            cls.propertyPerAccessorDct = cls._propertyNamesPerAccessor()
 
         self._writingValues_ = False
         self.__metaProperties = {}
 
-        for sProperty, _ in self.__class__.propertiesDctItems:
+        for sProperty, _ in cls.propertiesDctItems:
 
-            metaprpty = self.__class__.propertyFactoryClass(sProperty, self)
+            metaprpty = cls.propertyFactoryClass(sProperty, self)
             setattr(self, metaprpty.name, metaprpty.defaultValue)
 
             self.__metaProperties[sProperty] = metaprpty
 
+        logMsg(cls.__name__, log='all')
+
+    def loadData(self, propertyNames=None):
         logMsg(self.__class__.__name__, log='all')
 
-    def loadData(self):
-        logMsg(self.__class__.__name__, log='all')
+        sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
 
-        for sProperty, _ in self.__class__.propertiesDctItems:
+        for sProperty in sPropertyIter:
 
             metaprpty = self.__metaProperties[sProperty]
-            if metaprpty.isReadable():
-                setattr(self, metaprpty.name, metaprpty.read())
-            elif metaprpty.isLazy():
+            if metaprpty.isLazy():
                 setattr(self, metaprpty.name, metaprpty.defaultValue)
+            elif metaprpty.isReadable():
+                setattr(self, metaprpty.name, metaprpty.read())
 
     def metaProperty(self, sProperty):
         return self.__metaProperties.get(sProperty)
@@ -122,43 +129,6 @@ class MetaObject(object):
         setattr(self, metaprpty.name, value)
 
         return True
-
-
-    def iterPropertyNames(self, **params):
-
-        cls = self.__class__
-        sPropertyIter = (s for s, _ in cls.propertiesDctItems)
-
-        bFilter = True if params else False
-        if not bFilter:
-            return sPropertyIter
-
-        return self.filterPropertyNames(sPropertyIter, **params)
-
-    def filterPropertyNames(self, propertyNames, **params):
-
-        sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
-
-        for sPrpty in sPropertyIter:
-
-            ok = True
-            for k, value in params.iteritems():
-                if self.getPrptyParam(sPrpty, k, "") != value:
-                    ok = False
-                    break
-            if ok:
-                yield sPrpty
-
-    def getPrptyParam(self, sProperty, key, default="NoEntry"):
-
-        cls = self.__class__
-
-        assert sProperty in cls.propertiesDct
-
-        if default == "NoEntry":
-            return cls.propertiesDct[sProperty][key]
-        else:
-            return cls.propertiesDct[sProperty].get(key, default)
 
     def createPrptyEditor(self, sProperty, parentWidget):
 
@@ -312,6 +282,55 @@ class MetaObject(object):
         assert sProperty in self.__class__.propertiesDct
 
         return None, True
+
+    @classmethod
+    def _propertyNamesPerAccessor(cls, propertyNames=None):
+
+        sPropertyIter = cls._iterPropertyArg(propertyNames)
+
+        resDct = {}
+
+        for sPrpty in sPropertyIter:
+            sAccessor = cls.getPrptyParam(sPrpty, "accessor", "")
+            resDct.setdefault(sAccessor, []).append(sPrpty)
+
+        return resDct
+
+    @classmethod
+    def iterPropertyNames(cls, **params):
+
+        sPropertyIter = (s for s, _ in cls.propertiesDctItems)
+
+        bFilter = True if params else False
+        if not bFilter:
+            return sPropertyIter
+
+        return cls.filterPropertyNames(sPropertyIter, **params)
+
+    @classmethod
+    def filterPropertyNames(cls, propertyNames, **params):
+
+        sPropertyIter = cls._iterPropertyArg(propertyNames)
+
+        for sPrpty in sPropertyIter:
+
+            ok = True
+            for k, value in params.iteritems():
+                if cls.getPrptyParam(sPrpty, k, "") != value:
+                    ok = False
+                    break
+            if ok:
+                yield sPrpty
+
+    @classmethod
+    def getPrptyParam(cls, sProperty, key, default="NoEntry"):
+
+        assert sProperty in cls.propertiesDct
+
+        if default == "NoEntry":
+            return cls.propertiesDct[sProperty][key]
+        else:
+            return cls.propertiesDct[sProperty].get(key, default)
 
     @classmethod
     def _iterPropertyArg(cls, propertyNames):

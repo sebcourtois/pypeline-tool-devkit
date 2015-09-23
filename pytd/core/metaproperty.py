@@ -1,4 +1,5 @@
 
+import re
 from functools import partial
 
 from pytd.util.logutils import logMsg
@@ -19,6 +20,8 @@ def setattr_(*args):
 
     return True
 
+_STR_TO_LIST_RGX = re.compile(r'[\w\-.]+', re.L)
+
 class MetaProperty(object):
 
     parameterDefaults = (
@@ -30,7 +33,6 @@ class MetaProperty(object):
         ("reader", ""),
         ("writer", ""),
     )
-
 
     def __init__(self , sProperty, metaobj):
 
@@ -213,10 +215,26 @@ class MetaProperty(object):
     def castToWrite(self, in_value):
 
         if in_value == "undefined":
-            raise ValueError("Bad value for {}.{}: '{}'."
+            raise ValueError(u"Bad value for {}.{}: '{}'."
                    .format(self._metaobj, self.name, in_value))
 
         return in_value
+
+    def castFromUi(self, value):
+
+        if self.isMulti():
+            if value and isinstance(value, basestring):
+                values = _STR_TO_LIST_RGX.findall(value)
+            else:
+                values = argToList(value)
+
+            _castFromUi = self._castFromUi
+            return list(_castFromUi(v) for v in values)
+
+        return value
+
+    def _castFromUi(self, value):
+        return value
 
     def getattr_(self, *args):
         return getattr(self._metaobj, self.name, *args)

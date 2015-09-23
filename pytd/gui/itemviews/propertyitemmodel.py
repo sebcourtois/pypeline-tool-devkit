@@ -96,6 +96,7 @@ class PropertyItem(QtGui.QStandardItem):
         if role == Qt.EditRole:
             metaobj = self._metaobj
             if metaobj:
+                value = self._metaprpty.castFromUi(value)
                 if metaobj.setPrpty(self.propertyName, value, withSetter=True):
                     metaobj.refresh()
                     self.emitDataChanged()
