@@ -45,10 +45,10 @@ class MetaObject(object):
         for sProperty in sPropertyIter:
 
             metaprpty = self.__metaProperties[sProperty]
-            if metaprpty.isLazy():
-                setattr(self, metaprpty.name, metaprpty.defaultValue())
-            elif metaprpty.isReadable():
+            if metaprpty.isReadable():
                 setattr(self, metaprpty.name, metaprpty.read())
+            elif metaprpty.isLazy():
+                setattr(self, metaprpty.name, metaprpty.defaultValue())
 
     def metaProperty(self, sProperty):
         return self.__metaProperties.get(sProperty)
@@ -79,7 +79,7 @@ class MetaObject(object):
 
     def setPrpty(self, sProperty, value, write=True, **kwargs):
 
-        bWithSetter = kwargs.get("withSetter", False)
+        bWithSetter = kwargs.get("withSetter", True)
         sMsg = ""
 
         setter = None
@@ -95,6 +95,11 @@ class MetaObject(object):
         bSuccess = False
 
         if setter:
+
+            if kwargs.get("warn", True):
+                logMsg("{}.{}() can be used to set '{}' property !"
+                       .format(self, sSetter, sProperty), warning=True)
+
             try:
                 bSuccess = setter(value, write=write)
             except TypeError:
@@ -217,7 +222,7 @@ class MetaObject(object):
             if srcprpty.isCopyable():
                 value = srcprpty.getattr_()
                 # deferred write of all values
-                self.setPrpty(sProperty, value, write=False)
+                self._setPrpty(sProperty, value, write=False)
                 sPropertyList.append(sProperty)
 
         return self.writeAllValues(sPropertyList)

@@ -97,7 +97,7 @@ class PropertyItem(QtGui.QStandardItem):
             metaobj = self._metaobj
             if metaobj:
                 value = self._metaprpty.castFromUi(value)
-                if metaobj.setPrpty(self.propertyName, value, withSetter=True):
+                if metaobj.setPrpty(self.propertyName, value, warn=False):
                     metaobj.refresh()
                     self.emitDataChanged()
         else:
