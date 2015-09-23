@@ -31,7 +31,7 @@ class MetaObject(object):
         for sProperty, _ in cls.propertiesDctItems:
 
             metaprpty = cls.propertyFactoryClass(sProperty, self)
-            setattr(self, metaprpty.name, metaprpty.defaultValue)
+            setattr(self, metaprpty.name, metaprpty.defaultValue())
 
             self.__metaProperties[sProperty] = metaprpty
 
@@ -46,7 +46,7 @@ class MetaObject(object):
 
             metaprpty = self.__metaProperties[sProperty]
             if metaprpty.isLazy():
-                setattr(self, metaprpty.name, metaprpty.defaultValue)
+                setattr(self, metaprpty.name, metaprpty.defaultValue())
             elif metaprpty.isReadable():
                 setattr(self, metaprpty.name, metaprpty.read())
 
@@ -235,7 +235,8 @@ class MetaObject(object):
         for sProperty, _ in cls.propertiesDctItems:
             metaprpty = self.__metaProperties[sProperty]
 
-            if metaprpty.defaultValue == "undefined" and not bIgnoreMissing:
+            defaultValue = metaprpty.defaultValue()
+            if defaultValue == "undefined" and (not bIgnoreMissing):
 
                 try:
                     value = kwargs.pop(metaprpty.name)
@@ -247,7 +248,7 @@ class MetaObject(object):
                     setattr(self, metaprpty.name, value)
 
             else:
-                value = kwargs.pop(metaprpty.name, metaprpty.defaultValue)
+                value = kwargs.pop(metaprpty.name, defaultValue)
                 setattr(self, metaprpty.name, value)
 
         logMsg("Remaining kwargs:", kwargs, log="debug")

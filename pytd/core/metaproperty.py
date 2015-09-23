@@ -45,9 +45,6 @@ class MetaProperty(object):
         self.type = propertyDct["type"]
         self.__isMulti = propertyDct["isMulti"]
 
-        value = copyOf(propertyDct.get("default", "undefined"))
-        self.defaultValue = argToList(value) if self.__isMulti else value
-
         self.__copyable = propertyDct["copyable"]
         self.__lazy = propertyDct["lazy"]
 
@@ -140,6 +137,11 @@ class MetaProperty(object):
             value = self.propertyDct.get(sParam, default)
 
         return copyOf(value)
+
+    def defaultValue(self):
+
+        value = copyOf(self.propertyDct.get("default", "undefined"))
+        return argToList(value) if self.__isMulti else value
 
     def isMulti(self):
         return self.__isMulti
