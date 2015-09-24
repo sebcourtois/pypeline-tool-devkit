@@ -24,6 +24,7 @@ class BaseContextMenu(QtGui.QMenu):
         self.buildSubmenus()
 
     def model(self):
+
         model = self.view.model()
         if isinstance(model, QtGui.QSortFilterProxyModel):
             return model.sourceModel()

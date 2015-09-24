@@ -183,6 +183,8 @@ class MetaObject(object):
             except Exception, msg:
                 logMsg(toStr(msg), warning=True)
 
+    def getAllValues(self, propertyNames=None):
+        return dict(self.iterDataItems(propertyNames))
 
     def iterDataItems(self, propertyNames=None):
 
@@ -193,7 +195,7 @@ class MetaObject(object):
 
         sPropertyIter = self.__class__._iterPropertyArg(propertyNames)
 
-        values = {}
+        data = {}
 
         for sProperty in sPropertyIter:
             metaprpty = self.__metaProperties[sProperty]
@@ -203,11 +205,11 @@ class MetaObject(object):
 
             sName = metaprpty.storageName
             if not sName:
-                raise RuntimeError("{}")
+                raise RuntimeError("No storage name defined for {}.{}".format(self, metaprpty.name))
 
-            values[sName] = metaprpty.castToWrite(self.getPrpty(sProperty))
+            data[sName] = metaprpty.castToWrite(self.getPrpty(sProperty))
 
-        return values
+        return data
 
     def copyValuesFrom(self, srcobj):
 
