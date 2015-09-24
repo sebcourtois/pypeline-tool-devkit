@@ -167,6 +167,8 @@ class BaseTreeWidget(QtGui.QWidget):
     def setUiCategory(self, categoryKey):
 
         model = self.model()
+        if isinstance(model, QtGui.QSortFilterProxyModel):
+            model = model.sourceModel()
 
         sPropertyToDisplayList = model.getPrptiesFromUiCategory(categoryKey)
 

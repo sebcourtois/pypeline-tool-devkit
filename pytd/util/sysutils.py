@@ -302,7 +302,7 @@ def reloadModule(m):
     sFile = m.__file__[:-1] if m.__file__.endswith(".pyc") else m.__file__
 
     excluded = [ "Crypto", "git", "async", "PyQt4", "PySide", "MySQLdb",
-                "pymel", "maya" ]
+                "pymel", "maya", "requests", "ecdsa", "paramiko", "shotgun_api3" ]
 
     finder = TdModuleFinder(debug=0, excludes=excluded)
     finder.load_file(sFile)

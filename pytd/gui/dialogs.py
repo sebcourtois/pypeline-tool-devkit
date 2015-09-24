@@ -3,7 +3,7 @@
 from PySide import QtGui
 from PySide.QtCore import Signal, Qt
 
-from pytd.util.sysutils import toUnicode, toStr
+from pytd.util.sysutils import toUnicode, toStr, inDevMode
 
 from .ui.login_dialog import Ui_LoginDialog
 
@@ -307,7 +307,11 @@ class LoginDialog(QtGui.QDialog, Ui_LoginDialog):
                             , cancelButton="OK"
                             , dismissString="OK"
                             , icon="critical")
-                raise
+
+                if inDevMode():
+                    raise
+
+                return
 
         elif sUser and sPwd:
             res = (sUser, sPwd)

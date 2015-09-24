@@ -58,13 +58,13 @@ def importFile(sFilePath, **kwargs):
 
         if sConfirm == "Cancel":
             logMsg("Cancelled !" , warning=True)
-            return '_cancelled_'
+            return
 
         bNewFile = True if sConfirm == "New Scene" else False
 
     if bNewFile:
-        if newScene(**kwargs) == '_cancelled_':
-            return '_cancelled_'
+        if newScene(**kwargs):
+            return
 
     if bReference:
 
@@ -130,34 +130,35 @@ def chooseMayaScene(**kwargs):
 
 def saveScene(**kwargs):
 
-    sFileType = mc.file(q=True, type=True)
-
-    sCurntScenePath = mc.file(q=True, sceneName=True)
-    if not sCurntScenePath:
-        sCurntScenePath = "untitled scene"
-
-    if len(sFileType) > 1:
-        raise RuntimeError, 'Saving "{0}" : More than one type matches this file : {1}'\
-                            .format(sCurntScenePath, sFileType)
+    sCurScnPath = mc.file(q=True, sceneName=True)
+    sSceneName = sCurScnPath
+    if not sCurScnPath:
+        sSceneName = "untitled scene"
+        sFileTypeList = ['mayaAscii', 'mayaBinary']
     else:
-        sFileType = sFileType[0]
+        sFileTypeList = mc.file(q=True, type=True)
 
-    sWantedFileType = kwargs.get('type', kwargs.get('typ', ''))
+        if len(sFileTypeList) > 1:
+            raise RuntimeError, 'Saving "{0}" : More than one type matches this file : {1}'\
+                                .format(sCurScnPath, sFileTypeList)
+        else:
+            sFileType = sFileTypeList[0]
+
+    sWantedFileType = kwargs.get('fileType', kwargs.get('ft', ''))
 
     bForce = True
-
     if sWantedFileType and (sWantedFileType != sFileType):
 
         if sWantedFileType not in ('mayaAscii', 'mayaBinary'):
-            raise ValueError, 'Invalid file type : "{0}"'.format(sWantedFileType)
+            raise ValueError('Invalid file type : "{0}"'.format(sWantedFileType))
 
         sFileType = sWantedFileType
         bForce = False
 
     else:
         if not mc.file(q=True, modified=True):
-            logMsg('Saving "{0}" : No changes to save.'.format(sCurntScenePath) , warning=True)
-            return sCurntScenePath
+            logMsg('Saving "{0}" : No changes to save.'.format(sSceneName) , warning=True)
+            return sCurScnPath
 
     bConfirm = kwargs.get("confirm", True)
 
@@ -173,9 +174,9 @@ def saveScene(**kwargs):
             sConfirmEnd = "!"
 
         sConfirm = pm.confirmDialog(title="Warning : Save Your Current Scene"
-                                    , message='Save changes to :\n\n{0} {1}'.format(sCurntScenePath, sConfirmEnd)
+                                    , message='Save changes to :\n\n{0} {1}'.format(sSceneName, sConfirmEnd)
                                     , button=buttonList
-                                    , defaultButton="OK"
+                                    , defaultButton="Cancel"
                                     , cancelButton="Cancel"
                                     , dismissString=sDismiss
                                     )
@@ -184,20 +185,20 @@ def saveScene(**kwargs):
 
     if sConfirm == "Cancel":
         logMsg("Cancelled !" , warning=True)
-        return "_cancelled_"
+        return ""
 
     elif sConfirm == "Don't Save":
-        return sCurntScenePath
+        return sCurScnPath
 
     elif sConfirm == "Save":
 
         bNoFileCheck = kwargs.pop("noFileCheck", True)
 
-        if sCurntScenePath == "untitled scene":
+        if sCurScnPath == "":
 
-            sFileList = chooseMayaScene(type=sWantedFileType)
+            sFileList = chooseMayaScene(ff=sFileTypeList)
             if not sFileList:
-                return "_cancelled_"
+                return ""
 
             if bNoFileCheck:
                 pmu.putEnv("DAM_FILE_CHECK", "")
@@ -216,14 +217,14 @@ def newScene(**kwargs):
     bForce = kwargs.get("force", kwargs.get("f", False))
 
     if not bForce:
-        sSavedFile = saveScene()
+        sScenePath = saveScene()
     else:
-        sSavedFile = "newFileForced"
+        sScenePath = "newFileForced"
 
-    if sSavedFile != '_cancelled_':
+    if sScenePath:
         pm.newFile(force=True)
 
-    return sSavedFile
+    return sScenePath
 
 def openScene(*args, **kwargs):
 

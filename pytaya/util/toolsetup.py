@@ -55,7 +55,6 @@ class ToolSetup(object):
         self.preNewOrOpenedJobId = None
         self.sceneSavedJobId = None
 
-
     def setLogLevel(self, *args):
 
         logutils.logSeverity = args[0]
@@ -65,14 +64,16 @@ class ToolSetup(object):
         return pm.optionVar.get("TD_logLevel", 0)
 
     def beforeReloading(self, *args):
-        pass
+        self.killScriptJobs()
 
     def afterReloading(self, *args):
-        pass
+        sClsName = self.__class__.__name__
+        sModName = self.__class__.__module__
+
+        s = "from {0} import {1}; {1}().install()".format(sModName, sClsName)
+        exec(s, {})
 
     def reload(self, *args):
-
-        self.killScriptJobs()
 
         self.beforeReloading()
 

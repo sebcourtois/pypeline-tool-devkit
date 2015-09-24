@@ -246,10 +246,14 @@ class PropertyItemModel(QtGui.QStandardItemModel):
             self.propertyNames.remove(sPrimePrpty)
             self.propertyNames.insert(0, sPrimePrpty)
 
+        uiCategoryDct["YY_AllnDev"] = uiCategoryDct["XX_All"] + uiCategoryDct["ZZ_Dev"]
+
         self.propertiesDct = propertiesDct
         self.uiCategoryDct = uiCategoryDct
         self.primaryProperty = sPrimePrpty
 
+#        for k, v in uiCategoryDct.iteritems():
+#            print k, v
 
     def getPrptiesFromUiCategory(self, categoryKey):
 
