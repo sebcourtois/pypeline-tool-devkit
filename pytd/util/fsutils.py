@@ -155,8 +155,11 @@ def iterPaths(sRootDirPath, **kwargs):
 
                 yield pathJoin(sDirPath, sFileName)
 
-def addEndSlash(sDirPath):
-    return sDirPath if sDirPath.endswith("/") else sDirPath + "/"
+def addEndSlash(p):
+    return p if p.endswith("/") else p + "/"
+
+def delEndSlash(p):
+    return p[:-1] if p.endswith("/") else p
 
 def commonDir(sPathList):
     sDir = osp.commonprefix(sPathList)

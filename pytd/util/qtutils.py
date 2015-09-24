@@ -59,7 +59,7 @@ def toColorSheet(qColor, default=None):
 
 def toQFileInfo(p):
 
-    if not p or isinstance(p, QFileInfo):
+    if (not p) or isinstance(p, QFileInfo):
         fileInfo = p
     else:
         fileInfo = QFileInfo(p)
