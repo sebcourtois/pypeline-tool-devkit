@@ -12,6 +12,7 @@ from pytd.core.metaproperty import EditState as Eds
 from .utils import ItemUserFlag
 from .utils import ItemUserRole
 from .utils import toDisplayText
+from pytd.gui.dialogs import confirmDialog
 
 class PropertyIconProvider(object):
 
@@ -94,12 +95,30 @@ class PropertyItem(QtGui.QStandardItem):
     def setData(self, value, role=Qt.EditRole):
 
         if role == Qt.EditRole:
+
             metaobj = self._metaobj
-            if metaobj:
+            if not metaobj:
+                return
+
+            bSuccess = False
+            try:
                 value = self._metaprpty.castFromUi(value)
-                if metaobj.setPrpty(self.propertyName, value, warn=False):
-                    metaobj.refresh()
-                    self.emitDataChanged()
+                bSuccess = metaobj.setPrpty(self.propertyName, value, warn=False)
+            except Exception, err:
+                sMsg = u"Could not set {}.{}:\n\n".format(metaobj, self.propertyName)
+                confirmDialog(title='SORRY !'
+                            , message=sMsg + toStr(err)
+                            , button=["OK"]
+                            , defaultButton="OK"
+                            , cancelButton="OK"
+                            , dismissString="OK"
+                            , icon="critical")
+                raise
+
+            if bSuccess:
+                metaobj.refresh()
+                self.emitDataChanged()
+
         else:
             return QtGui.QStandardItem.setData(self, value, role)
 
