@@ -2,6 +2,7 @@
 from functools import partial
 
 import pymel.util
+from pytd.util.sysutils import hostApp
 pmu = pymel.util
 
 import pymel.core
@@ -208,21 +209,19 @@ class ToolSetup(object):
                                 radioButton=(logutils.logSeverity == 3),
                                 c=partial(self.setLogLevel, 3))
 
-            #if isGitDisabled():
                 pm.menuItem(divider=True)
                 pm.menuItem(label="Reload Tools", c=self.reload)
 
     def buildMenu(self):
 
-#        if sysutils.MAYAPY_STANDALONE:
-#            return
-
         if not self.beforeBuildingMenu():
             return
 
-        self.beginMenu()
-        self.populateMenu()
-        self.endMenu()
+        if hostApp() == "maya":
+
+            self.beginMenu()
+            self.populateMenu()
+            self.endMenu()
 
         self.afterBuildingMenu()
 
