@@ -79,17 +79,20 @@ class PropertyItem(QtGui.QStandardItem):
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
             if provider:
-
                 iconSrc = metaprpty.iconSource()
                 icon = provider.icon(iconSrc)
+                self.setData(icon, Qt.DecorationRole)
 
+    def loadImage(self):
+
+        metaprpty = self._metaprpty
+        if metaprpty.getParam("uiDecorated", False):
+            provider = self.model().iconProvider()
+            if provider:
                 image = provider.image(metaprpty.imageSource())
                 if image.isNull():
-                    image = icon
-                else:
-                    icon.addPixmap(image)
+                    image = self.icon()
 
-                self.setData(icon, Qt.DecorationRole)
                 self.setData(image, ItemUserRole.ImageRole)
 
     def setData(self, value, role=Qt.EditRole):
