@@ -2,7 +2,7 @@
 from functools import partial
 
 import pymel.util
-from pytd.util.sysutils import hostApp
+from pytd.util.sysutils import hostApp, reloadModule
 pmu = pymel.util
 
 import pymel.core
@@ -15,9 +15,6 @@ from pytd.util.logutils import logMsg
 from pytd.util import logutils
 from pytd.util import sysutils
 
-#-------------------------------------------------------------------------------
-#    Decorators
-#-------------------------------------------------------------------------------
 
 def catchJobException(func):
 
@@ -33,10 +30,20 @@ def catchJobException(func):
 
     return doIt
 
-''
-#-------------------------------------------------------------------------------
-#    Core
-#-------------------------------------------------------------------------------
+
+def reloadUI(sUiModuleName, bRelaunchUI, **kwargs):
+
+    sReloadCmd = "import {0}; reload({0}); "
+
+    reloadModule(sUiModuleName)
+
+    if bRelaunchUI:
+        strKwargs = ", ".join(str(k) + "='" + str(v) + "'" for k, v in kwargs.items())
+        if strKwargs:
+            pm.evalDeferred((sReloadCmd + '{0}.launch({1})').format(sUiModuleName, strKwargs))
+        else:
+            pm.evalDeferred((sReloadCmd + '{0}.launch()').format(sUiModuleName))
+
 
 class ToolSetup(object):
 
