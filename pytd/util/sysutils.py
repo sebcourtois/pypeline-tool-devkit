@@ -229,7 +229,13 @@ def isQtApp():
     except ImportError:
         return False
     else:
-        return (QtGui.qApp is not None)
+        qApp = QtGui.qApp
+        if not qApp:
+            qApp = QtGui.QApplication.instance()
+            if not qApp:
+                return False
+
+        return (qApp.type() != QtGui.QApplication.Tty)
 
 def inDevMode():
     s = os.getenv("DEV_MODE_ENV", "0")
