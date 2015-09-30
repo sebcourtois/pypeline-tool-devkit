@@ -3,6 +3,10 @@
 from PySide.QtCore import Qt, QFileInfo
 from PySide import QtGui
 
+try:
+    import shiboken
+except ImportError:
+    from PySide import shiboken
 
 _qTransformModeDct = {
 "fast":Qt.FastTransformation,
@@ -88,3 +92,6 @@ def setWaitCursor(func):
 
         return ret
     return doIt
+
+def isValidQObj(qobj):
+    return shiboken.isValid(qobj)
