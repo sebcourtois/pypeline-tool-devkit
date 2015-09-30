@@ -50,6 +50,10 @@ class MetaObject(object):
             elif metaprpty.isLazy():
                 setattr(self, metaprpty.name, metaprpty.defaultValue())
 
+    def primeProperty(self):
+        sProperty = self.__class__.primaryProperty
+        return self.__metaProperties.get(sProperty)
+
     def metaProperty(self, sProperty):
         return self.__metaProperties.get(sProperty)
 
