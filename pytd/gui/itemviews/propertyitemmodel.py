@@ -68,7 +68,18 @@ class PropertyItem(QtGui.QStandardItem):
         self.loadData(metaprpty)
 
         if self.column() == 0:
-            metaprpty.viewItems.append(self)
+
+            cachedPropertyItems = self.model()._cachedPropertyItems
+            cacheKey = id(metaprpty)
+
+            curItems = cachedPropertyItems.get(cacheKey)
+            if not curItems:
+                curItems = [self]
+                cachedPropertyItems[cacheKey] = curItems
+            else:
+                curItems.append(self)
+
+            metaprpty.viewItems = curItems
 
     def loadData(self, metaprpty):
 
@@ -79,8 +90,7 @@ class PropertyItem(QtGui.QStandardItem):
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
             if provider:
-                iconSrc = metaprpty.iconSource()
-                icon = provider.icon(iconSrc)
+                icon = provider.icon(metaprpty.iconSource())
                 self.setData(icon, Qt.DecorationRole)
 
     def loadImage(self):
@@ -193,10 +203,12 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         metamodel.setItemModel(self)
 
         self.__iconProvider = None
+        self._cachedPropertyItems = {}
 
         self.loadProperties(metamodel)
         self.setupHeaderData(metamodel)
         self.populateModel(metamodel)
+
 
         # self.rowsInserted.connect(self.onRowsInserted)
         # self.rowsMoved.connect(self.onRowsMoved)
