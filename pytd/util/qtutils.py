@@ -77,18 +77,22 @@ def setWaitCursor(func):
 
     def doIt(*args, **kwargs):
 
-        app = QtGui.qApp
-        cursor = app.overrideCursor()
-        bOverride = True if (not cursor) or (cursor.shape() != Qt.WaitCursor) else False
+        bOverride = False
+
+        qApp = QtGui.QApplication.instance()
+        if qApp and (qApp.type() != QtGui.QApplication.Tty):
+            cursor = qApp.overrideCursor()
+            if (not cursor) or (cursor.shape() != Qt.WaitCursor):
+                bOverride = True
 
         if bOverride:
-            app.setOverrideCursor(QtGui.QCursor(Qt.WaitCursor))
+            qApp.setOverrideCursor(QtGui.QCursor(Qt.WaitCursor))
 
         try:
             ret = func(*args, **kwargs)
         finally:
             if bOverride:
-                app.restoreOverrideCursor()
+                qApp.restoreOverrideCursor()
 
         return ret
     return doIt

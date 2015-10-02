@@ -344,4 +344,16 @@ def sha1HashFile(sFilePath, chunk_size=1024 * 8):
 
     return h.hexdigest()
 
+def topmostFoundDir(sPath):
 
+    sTestPath = sPath
+    while not osp.exists(sTestPath):
+
+        sSplitPath, _ = osp.split(sTestPath)
+
+        if sSplitPath == sTestPath:
+            return ""
+
+        sTestPath = sSplitPath
+
+    return sTestPath

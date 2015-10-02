@@ -57,6 +57,10 @@ class PropertyItem(QtGui.QStandardItem):
         self.loadFlags(metaprpty)
         self.loadData(metaprpty)
 
+        image = self.data(ItemUserRole.ImageRole)
+        if image and (not image.isNull()):
+            self.loadImage()
+
     def setupData(self, metaprpty):
 
         msg = u"{} has not been added to a model yet !".format(self)
@@ -97,6 +101,7 @@ class PropertyItem(QtGui.QStandardItem):
 
         metaprpty = self._metaprpty
         if metaprpty.getParam("uiDecorated", False):
+
             provider = self.model().iconProvider()
             if provider:
                 image = provider.image(metaprpty.imageSource())

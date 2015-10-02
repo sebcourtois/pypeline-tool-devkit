@@ -206,6 +206,9 @@ class PyConfParser(object):
                    .format(self, sSectionName, sorted(sections.iterkeys())))
             raise EnvironmentError(msg)
 
+    def hasSection(self, sSection):
+        return sSection in self.__sections
+
     def formatedErrors(self, sErrorList):
         return 'Failed initializing {0}: \n\t{1}'.format(self, "\n\t".join(sErrorList))
 

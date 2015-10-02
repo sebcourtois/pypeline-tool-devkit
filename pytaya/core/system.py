@@ -201,14 +201,14 @@ def saveScene(**kwargs):
                 return ""
 
             if bNoFileCheck:
-                pmu.putEnv("DAM_FILE_CHECK", "")
+                pmu.putEnv("DAVOS_FILE_CHECK", "")
 
             return pm.saveAs(sFileList[0], force=True)
 
         else:
 
             if bNoFileCheck:
-                pmu.putEnv("DAM_FILE_CHECK", "")
+                pmu.putEnv("DAVOS_FILE_CHECK", "")
 
             return pm.saveFile(force=bForce, type=sFileType)
 
@@ -229,6 +229,6 @@ def newScene(**kwargs):
 def openScene(*args, **kwargs):
 
     if kwargs.pop("noFileCheck", True):
-        pmu.putEnv("DAM_FILE_CHECK", "")
+        pmu.putEnv("DAVOS_FILE_CHECK", "")
 
     return pm.openFile(*args, **kwargs)

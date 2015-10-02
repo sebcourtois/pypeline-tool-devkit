@@ -170,7 +170,6 @@ class ToolSetup(object):
 
     def afterBuildingMenu(self):
 
-        pmu.putEnv("TD_FILE_CHECK", "1")
         self.startScriptJobs()
 
     def beginMenu(self):
