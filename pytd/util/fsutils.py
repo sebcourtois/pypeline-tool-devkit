@@ -109,12 +109,14 @@ def iterPaths(sRootDirPath, **kwargs):
 
     bFiles = kwargs.pop("files", True)
     bDirs = kwargs.pop("dirs", True)
+    bEmptyDirs = kwargs.pop("emptyDirs", True)
+
     bRecursive = kwargs.pop("recursive", True)
 
     ignoreDirsFunc = kwargs.get("ignoreDirs", None)
     ignoreFilesFunc = kwargs.get("ignoreFiles", None)
 
-    filterFilesFunc = kwargs.get("filterFiles", None)
+    keepFilesFunc = kwargs.get("keepFiles", None)
 
     for sDirPath, sDirNames, sFileNames in os.walk(sRootDirPath):
 
@@ -127,33 +129,44 @@ def iterPaths(sRootDirPath, **kwargs):
                 try: sDirNames.remove(sDir)
                 except ValueError: pass
 
-        if bDirs:
-            for sDir in sDirNames:
-                yield addEndSlash(pathJoin(sDirPath, sDir))
+        bOnly = False
+        sKeepFiles = []
+        if keepFilesFunc is not None:
+            sKeepFiles = keepFilesFunc(sDirPath, sFileNames)
+            #print "sKeepFiles", sKeepFiles, sFileNames
+            bOnly = True
 
-        if bFiles:
+        sIgnoredFiles = []
+        if ignoreFilesFunc is not None:
+            sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
+            #print "sIgnoredFiles", sIgnoredFiles
 
-            bFilter = False
-            sFilterFiles = []
-            if filterFilesFunc is not None:
-                sFilterFiles = filterFilesFunc(sDirPath, sFileNames)
-                #print "sFilterFiles", sFilterFiles, sFileNames
-                bFilter = True
+        sKeptFileNames = sFileNames[:]
 
-            sIgnoredFiles = []
-            if ignoreFilesFunc is not None:
-                sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
-                #print "sIgnoredFiles", sIgnoredFiles
+        for sFileName in sFileNames:
 
-            for sFileName in sFileNames:
+            if bOnly and (sFileName not in sKeepFiles):
+                if bEmptyDirs:
+                    sKeptFileNames.remove(sFileName)
+                continue
 
-                if bFilter and (sFileName not in sFilterFiles):
-                    continue
+            if sFileName in sIgnoredFiles:
+                if bEmptyDirs:
+                    sKeptFileNames.remove(sFileName)
+                continue
 
-                if sFileName in sIgnoredFiles:
-                    continue
-
+            if bFiles:
                 yield pathJoin(sDirPath, sFileName)
+
+        if bDirs:
+
+            bIsLeaf = (not sDirNames)
+            bIsEmpty = bIsLeaf and (not sKeptFileNames)
+            bDoYield = bIsEmpty if bEmptyDirs else bIsLeaf
+            if bDoYield:
+                #print sDirPath, bIsLeaf, bIsEmpty
+                yield addEndSlash(pathNorm(sDirPath))
+
 
 def addEndSlash(p):
     return p if p.endswith("/") else p + "/"
@@ -174,7 +187,7 @@ def copyFile(sSrcFilePath, sDestPath, **kwargs):
 
     return file_util.copy_file(sSrcFilePath, sDestPath, **kwargs)
 
-def copyTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
+def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
 
     bDryRun = kwargs.get("dry_run", False)
 
