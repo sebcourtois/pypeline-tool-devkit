@@ -246,7 +246,7 @@ def hostApp():
     app = osp.basename(p).lower()
     return "" if app == "python" else app
 
-def updEnv(sVar, in_value, conflict='replace'):
+def updEnv(sVar, in_value, conflict='replace', setEnvFunc=None):
 
     opts = ('add', 'replace', 'keep', 'fail')
     if conflict not in opts:
@@ -272,7 +272,10 @@ def updEnv(sVar, in_value, conflict='replace'):
             sAction = "upd"
 
     print sMsgFmt.format(sAction, sVar, in_value)
-    os.environ[sVar] = newValue
+    if setEnvFunc:
+        setEnvFunc(sVar, newValue)
+    else:
+        os.environ[sVar] = newValue
 
 ''
 #===============================================================================

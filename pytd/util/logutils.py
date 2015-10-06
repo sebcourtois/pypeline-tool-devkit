@@ -124,3 +124,9 @@ def forceLog(**kwargs):
         return doIt
 
     return decorate
+
+
+def confirmMessage(sLevel, sMsg, sChoiceList):
+    pass
+
+
