@@ -9,7 +9,7 @@ import copy
 import inspect
 import subprocess
 from functools import partial
-
+from importlib import import_module
 import locale
 import codecs
 
@@ -246,7 +246,20 @@ def hostApp():
     app = osp.basename(p).lower()
     return "" if app == "python" else app
 
-def updEnv(sVar, in_value, conflict='replace', setEnvFunc=None):
+def funcToSetHostEnv():
+
+    func = None
+    if "maya" in hostApp():
+        try:
+            from pymel.util import putEnv
+        except ImportError:
+            pass
+        else:
+            func = putEnv
+
+    return func
+
+def updEnv(sVar, in_value, conflict='replace', usingFunc=None):
 
     opts = ('add', 'replace', 'keep', 'fail')
     if conflict not in opts:
@@ -272,8 +285,8 @@ def updEnv(sVar, in_value, conflict='replace', setEnvFunc=None):
             sAction = "upd"
 
     print sMsgFmt.format(sAction, sVar, in_value)
-    if setEnvFunc:
-        setEnvFunc(sVar, newValue)
+    if usingFunc:
+        usingFunc(sVar, newValue)
     else:
         os.environ[sVar] = newValue
 
@@ -291,10 +304,17 @@ def importClass(sFullName, in_globals=None, in_locals=None):
 
 def importModule(sModuleName):
 
-    __import__(sModuleName)
-    modobj = sys.modules.get(sModuleName)
+#    m = sys.modules.get(sModuleName)
+#    if m:
+#        print "---------- found", sModuleName, sys.modules[sModuleName]
+#        reload(m)
+#        return m
 
-    return modobj
+    m = import_module(sModuleName)
+    reload(m)
+
+    return m
+
 
 def isClassOfModule(sModuleName, cls):
     return inspect.isclass(cls) # and (cls.__module__ == sModuleName)

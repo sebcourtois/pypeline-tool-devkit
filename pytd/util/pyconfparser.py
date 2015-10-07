@@ -5,9 +5,16 @@ import inspect as insp
 from pytd.util.sysutils import deepCopyOf, copyOf
 from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin
-from pytd.util.strutils import findFields
+from pytd.util.strutils import findFmtFields
 
 _SECTION_RGX = re.compile(r"{([\w]+)\.")
+
+def getattr_(pyobj, sAttr, *default):
+
+    if default:
+        return pyobj.__dict__.get(sAttr, default[0])
+    else:
+        return pyobj.__dict__[sAttr]
 
 class PyConfParser(object):
 
@@ -108,7 +115,7 @@ class PyConfParser(object):
 
                     if "=" in sPath:
                         tokens = {}
-                        for f in set(findFields(sPath)):
+                        for f in set(findFmtFields(sPath)):
                             if '=' not in f:
                                 continue
                             k, v = f.split("=")
@@ -119,7 +126,8 @@ class PyConfParser(object):
                         setattr(pyobj, sConfVar + "_tokens", tokens)
 
                     setattr(pyobj, sConfVar, sPath)
-                    sPathVars = getattr(pyobj, "all_tree_vars", [])
+
+                    sPathVars = pyobj.__dict__.get("all_tree_vars", [])
                     sPathVars.append(sConfVar)
                     setattr(pyobj, "all_tree_vars", sPathVars)
 
@@ -146,10 +154,26 @@ class PyConfParser(object):
 
         if isinstance(value, basestring):
 
-            sSectionSet = set(_SECTION_RGX.findall(value))
-            if sSectionSet:
-                sections = dict((s, getattr(self._pyobj, s)) for s in sSectionSet)
-                return value.format(**sections)
+            sFieldSet = set(findFmtFields(value))
+            if sFieldSet:
+                fields = {}
+                bHasSection = False
+                for sField in sFieldSet:
+
+                    if '.' in sField:
+                        sFieldSection, _ = sField.split(".", 1)
+                        if not sFieldSection:
+                            sFieldSection = sSection
+
+                        bHasSection = True
+
+                        confobj = self.getSection(sFieldSection)
+                        fields[sFieldSection] = confobj._pyobj
+                    else:
+                        fields[sField] = "{" + sField + "}"
+
+                if bHasSection:
+                    return value.format(**fields)
 
         return value
 

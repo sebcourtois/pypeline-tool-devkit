@@ -95,7 +95,7 @@ def camelJoin(iterable):
     return "".join((upperFirst(w) if i > 0 else w.lower() for i, w in enumerate(iterable)))
 
 
-def findFields(s):
+def findFmtFields(s):
     return _interBracketsRgx.findall(s)
 
 def padded(i, padding=3):
