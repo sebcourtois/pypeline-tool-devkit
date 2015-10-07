@@ -83,22 +83,22 @@ def toEditText(value, sep=", "):
         return toUnicode(value)
 
 
-def showPathInExplorer(sPath, isFile=False):
+def showPathInExplorer(sPath, isFile=False, select=False):
 
-    sNormPath = osp.normpath(sPath)
+    p = osp.normpath(sPath)
 
-    if not osp.exists(sNormPath):
+    if not osp.exists(p):
 
-        sPathTarget = "file" if isFile else "directory"
+        sPathType = "file" if isFile else "directory"
 
         confirmDialog(title='SORRY !'
-                    , message='No such {0} found: \n\n{1}'.format(sPathTarget, sNormPath)
+                    , message='No such {0} found: \n\n{1}'.format(sPathType, p)
                     , button=['OK']
                     , icon="critical")
         return False
 
-    sCmd = "explorer /select, {0}" if isFile else "explorer {0}"
-    sCmd = sCmd.format(sNormPath)
+    sCmd = "explorer /select, {0}" if isFile or select else "explorer {0}"
+    sCmd = sCmd.format(p)
     subprocess.Popen(sCmd, shell=True)
 
     return True
