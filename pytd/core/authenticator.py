@@ -1,7 +1,7 @@
 
 from getpass import getpass
 
-from pytd.util.sysutils import isQtApp, toStr
+from pytd.util.sysutils import qtGuiApp, toStr
 from pytd.gui.dialogs import loginDialog
 
 
@@ -27,7 +27,7 @@ class Authenticator(object):
         userData = self.loggedUser()
         if not userData:
 
-            if isQtApp():
+            if qtGuiApp():
                 userData = loginDialog(loginFunc=self.logIn)
             else:
                 for _ in xrange(5):

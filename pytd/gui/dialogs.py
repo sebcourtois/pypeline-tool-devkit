@@ -20,11 +20,9 @@ class ConfirmDialog(QtGui.QMessageBox):
 
     def __init__(self, **kwargs):
 
-        oWin = None
-#        if cmnCfg.INSIDE_MAYA:
-#            oWin = getWidget("MayaWindow")
+        parent = None
 
-        self._parent = kwargs.pop("parent", kwargs.pop("p", oWin))
+        self._parent = kwargs.pop("parent", kwargs.pop("p", parent))
         self._title = kwargs.pop("title", kwargs.pop("t", 'Confirm Dialog box'))
         self._icon = kwargs.pop("icon", kwargs.pop("icn", "information"))
 

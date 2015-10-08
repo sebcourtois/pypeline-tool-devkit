@@ -222,7 +222,23 @@ def deepCopyOf(value):
     else:
         return value
 
-def isQtApp():
+def qtGuiApp():
+    qApp = qtApp()
+    return qApp if isQtGui(qApp) else None
+
+def isQtGui(qApp=None):
+
+    if not qApp:
+        qApp = qtApp()
+        if not qApp:
+            return False
+
+    from PySide import QtGui
+    return (qApp.type() != QtGui.QApplication.Tty)
+
+def qtApp():
+
+    qApp = None
 
     try:
         from PySide import QtGui
@@ -232,10 +248,8 @@ def isQtApp():
         qApp = QtGui.qApp
         if not qApp:
             qApp = QtGui.QApplication.instance()
-            if not qApp:
-                return False
 
-        return (qApp.type() != QtGui.QApplication.Tty)
+    return qApp
 
 def inDevMode():
     s = os.getenv("DEV_MODE_ENV", "0")
