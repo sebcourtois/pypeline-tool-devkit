@@ -246,7 +246,7 @@ def hostApp():
     app = osp.basename(p).lower()
     return "" if app == "python" else app
 
-def funcToSetHostEnv():
+def hostSetEnvFunc():
 
     func = None
     if "maya" in hostApp():
