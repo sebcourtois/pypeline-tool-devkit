@@ -126,7 +126,38 @@ def forceLog(**kwargs):
     return decorate
 
 
-def confirmMessage(sLevel, sMsg, sChoiceList):
-    pass
+def confirmMessage(in_sTitle, in_sMsg, sChoiceList=["OK"]):
+
+    sTitle = " " + in_sTitle + " "
+
+    sChoiceDct = dict((c.lower(), c) for c in sChoiceList)
+    sLowerList = sChoiceDct.keys()
+    bOneChoice = False
+    if len(sChoiceList) > 1:
+        sChoices = "|".join(sLowerList)
+        sChoices = '({}):'.format(sChoices)
+    else:
+        sChoices = "Press enter to continue..."
+        bOneChoice = True
+
+    w = len(max(in_sMsg.split("\n")))
+    w = max((w, len(sChoices)))
+
+    sMsg = sTitle.center(w, "#") + '\n\n' + in_sMsg + '\n'
+    print sMsg
+    sInput = ""
+    while True:
+        sInput = raw_input(sChoices)
+        if bOneChoice and (not sInput):
+            sInput = sLowerList[0]
+
+        if sInput in sLowerList:
+            break
+        else:
+            print "Invalid choice: '{}'".format(sInput)
+
+    return sChoiceDct[sInput]
+
+
 
 
