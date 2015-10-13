@@ -113,12 +113,12 @@ class PyConfParser(object):
 
                     sPath = sCurPath
 
-                    if "=" in sPath:
+                    if ':' in sPath:
                         tokens = {}
                         for f in set(findFmtFields(sPath)):
-                            if '=' not in f:
+                            if ':' not in f:
                                 continue
-                            k, v = f.split("=")
+                            k, v = f.split(':')
                             tokens[k.strip()] = v.strip()
 
                             sPath = sPath.replace(f, k)
