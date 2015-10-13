@@ -134,17 +134,17 @@ def confirmMessage(in_sTitle, in_sMsg, sChoiceList=["OK"]):
     sLowerList = sChoiceDct.keys()
     bOneChoice = False
     if len(sChoiceList) > 1:
-        sChoices = "|".join(sLowerList)
+        sChoices = "/".join(sLowerList)
         sChoices = '({}):'.format(sChoices)
     else:
         sChoices = "Press enter to continue..."
         bOneChoice = True
 
-    w = len(max(in_sMsg.split("\n")))
-    w = max((w, len(sChoices)))
+    sMsgLines = list("# " + l for l in in_sMsg.splitlines(True))
+    w = max(len(max(sMsgLines, key=len)), len(sChoices))
 
-    sMsg = sTitle.center(w, "#") + '\n\n' + in_sMsg + '\n'
-    print sMsg
+    sMsg = sTitle.center(w, "#") + '\n#\n' + "".join(sMsgLines) + '\n'
+    print '\n', sMsg
     sInput = ""
     while True:
         sInput = raw_input(sChoices)

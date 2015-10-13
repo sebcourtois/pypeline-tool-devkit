@@ -3,7 +3,8 @@
 from PySide import QtGui
 from PySide.QtCore import Signal, Qt
 
-from pytd.util.sysutils import toUnicode, toStr, inDevMode
+from pytd.util.sysutils import toUnicode, toStr, inDevMode, qtGuiApp
+from pytd.util.logutils import confirmMessage
 
 from .ui.login_dialog import Ui_LoginDialog
 
@@ -85,17 +86,24 @@ def confirmDialog(**kwargs):
     global result
     result = None
 
-    def choice(sButton):
-        global result
-        result = sButton
+    if qtGuiApp():
 
-    confirmDlg = ConfirmDialog(**kwargs)
-    confirmDlg.buttonChoice.connect(choice)
-    dismiss = confirmDlg.dismissString()
-    confirmDlg.exec_()
-    if not result:
-        result = dismiss
-    return result
+        def choice(sButton):
+            global result
+            result = sButton
+
+        confirmDlg = ConfirmDialog(**kwargs)
+        confirmDlg.buttonChoice.connect(choice)
+        dismiss = confirmDlg.dismissString()
+        confirmDlg.exec_()
+        if not result:
+            result = dismiss
+        return result
+
+    else:
+        return confirmMessage(kwargs.get("title", kwargs.get("t", 'PLEASE...')),
+                              kwargs.get("message", kwargs.get("m", "Are you sure ?")),
+                              kwargs.get("button", kwargs.get("b", ['Confirm'])))
 
 class PromptDialog(QtGui.QDialog):
 
