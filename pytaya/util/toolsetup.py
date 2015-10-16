@@ -1,19 +1,13 @@
 
 from functools import partial
 
-import pymel.util
-from pytd.util.sysutils import hostApp, reloadModule
-pmu = pymel.util
-
 import pymel.core
 pm = pymel.core
 
-import maya.cmds
-mc = maya.cmds
-
-from pytd.util.logutils import logMsg
 from pytd.util import logutils
 from pytd.util import sysutils
+from pytd.util.sysutils import hostApp, reloadModule
+from pytd.util.logutils import logMsg
 
 
 def catchJobException(func):
@@ -109,6 +103,10 @@ class ToolSetup(object):
         logMsg("Scene Saved", log="debug")
 
     def startScriptJobs(self):
+
+        if pm.about(batch=True):
+            return
+
         logMsg("Launch Start ScriptJobs", log="debug")
 
         self.postSceneReadJobId = pm.scriptJob(event=("PostSceneRead",
@@ -144,6 +142,9 @@ class ToolSetup(object):
         #pm.scriptJob( event = ( "DagObjectCreated", fncUtil.fillTypeLists ), runOnce = True )
 
     def killScriptJobs(self):
+
+        if pm.about(batch=True):
+            return
 
         self.postSceneReadJobId = pm.scriptJob(kill=self.postSceneReadJobId, force=True)
         logMsg("PostSceneRead Job Killed.")
