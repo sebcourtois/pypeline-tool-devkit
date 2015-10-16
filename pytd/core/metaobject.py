@@ -295,6 +295,9 @@ class MetaObject(object):
 
         return None, True
 
+    def displayViewItems(self):
+        return True
+
     @classmethod
     def _propertyNamesPerAccessor(cls, propertyNames=None):
 

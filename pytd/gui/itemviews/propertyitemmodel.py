@@ -329,6 +329,9 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
     def loadRowItems(self, metaobj, parentItem):
 
+        if not metaobj.displayViewItems():
+            return ()
+
         itemCls = self.__class__.standardItemClass
 
         metaprpties = metaobj.iterMetaPrpties(self.propertyNames)
