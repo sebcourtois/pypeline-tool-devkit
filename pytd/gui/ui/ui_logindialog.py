@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\sebcourtois\devspace\git\cg-pypeline-toolkit\resources\core\login_dialog.ui'
+# Form implementation generated from reading ui file 'C:\Users\sebcourtois\DEVSPACE\git\z2k-pipeline-toolkit\python\pypeline-tool-devkit\resources\ui\logindialog.ui'
 #
-# Created: Mon Jul 06 16:10:51 2015
+# Created: Wed Oct 21 12:31:28 2015
 #      by: pyside-uic 0.2.14 running on PySide 1.2.0
 #
 # WARNING! All changes made in this file will be lost!

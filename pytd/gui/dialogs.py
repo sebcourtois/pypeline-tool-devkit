@@ -6,7 +6,8 @@ from PySide.QtCore import Signal, Qt
 from pytd.util.sysutils import toUnicode, toStr, inDevMode, qtGuiApp
 from pytd.util.logutils import confirmMessage
 
-from .ui.login_dialog import Ui_LoginDialog
+from .ui.ui_logindialog import Ui_LoginDialog
+from .ui.ui_simpletreedialog import Ui_SimpleTreeDialog
 
 class ConfirmDialog(QtGui.QMessageBox):
 
@@ -338,3 +339,18 @@ def loginDialog(loginFunc=None):
     loginDlg.exec_()
 
     return LoginDialog.resultData()
+
+
+class SimpleTreeDialog(QtGui.QDialog, Ui_SimpleTreeDialog):
+
+    def __init__(self, *args, **kwargs):
+        super(SimpleTreeDialog, self).__init__(*args, **kwargs)
+
+        self.setupUi(self)
+
+        self.treeWidget.itemExpanded.connect(self.resizeAllColumns)
+
+    def resizeAllColumns(self, item):
+        treeWdg = self.treeWidget
+        for c in xrange(treeWdg.columnCount()):
+            treeWdg.resizeColumnToContents(c)
