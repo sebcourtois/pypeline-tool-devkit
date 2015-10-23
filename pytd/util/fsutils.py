@@ -85,7 +85,7 @@ def pathSplitDirs(p):
 
     p = p.strip("/")
 
-    res = [root] if root else []
+    res = [root + "/"] if root else []
     res.extend(p.split("/"))
 
     return res
@@ -370,3 +370,25 @@ def topmostFoundDir(sPath):
         sTestPath = sSplitPath
 
     return sTestPath
+
+def orderedTreeFromPaths(paths):
+
+    from collections import OrderedDict
+
+    tree = OrderedDict()
+    for p in paths:
+
+        dirs = pathSplitDirs(p)
+
+        children = tree
+        for d in dirs:
+
+            if d not in children:
+                nxtChilds = OrderedDict()
+                children[d] = nxtChilds
+            else:
+                nxtChilds = children[d]
+
+            children = nxtChilds
+
+    return tree

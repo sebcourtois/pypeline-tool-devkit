@@ -2,6 +2,7 @@
 from PySide import QtGui
 
 from pytd.util.sysutils import toUnicode
+from pytd.util.fsutils import orderedTreeFromPaths, pathJoin
 
 class ImageButton(QtGui.QPushButton):
 
@@ -86,3 +87,28 @@ class TabBar(QtGui.QTabBar):
         finally:
             self.__clearingUp = False
 
+
+class SimpleTree(QtGui.QTreeWidget):
+
+    itemClass = QtGui.QTreeWidgetItem
+
+    def __init__(self, parent):
+        super(SimpleTree, self).__init__(parent)
+
+        self.loadedItemCache = {}
+
+    def createTree(self, paths):
+
+        tree = orderedTreeFromPaths(paths)
+        self.createItems(tree, self)
+
+    def createItems(self, tree, parentItem, parentPath=""):
+
+        for child, children in tree.iteritems():
+
+            item = self.itemClass(parentItem, [child])
+
+            p = pathJoin(parentPath, child)
+
+            if children:
+                self.createItems(children, item, p)

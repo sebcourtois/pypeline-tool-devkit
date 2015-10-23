@@ -8,6 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PySide import QtCore, QtGui
+from pytd.gui.widgets import SimpleTree
 
 class Ui_SimpleTreeDialog(object):
     def setupUi(self, SimpleTreeDialog):
@@ -17,13 +18,13 @@ class Ui_SimpleTreeDialog(object):
         self.verticalLayout.setSpacing(6)
         self.verticalLayout.setContentsMargins(3, 3, 3, 3)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.treeWidget = QtGui.QTreeWidget(SimpleTreeDialog)
+        self.treeWidget = SimpleTree(SimpleTreeDialog)
         self.treeWidget.setObjectName("treeWidget")
         self.treeWidget.headerItem().setText(0, "1")
         self.verticalLayout.addWidget(self.treeWidget)
         self.buttonBox = QtGui.QDialogButtonBox(SimpleTreeDialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
