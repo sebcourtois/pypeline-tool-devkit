@@ -1,43 +1,47 @@
 
+import sys
 import os.path as osp
-from collections import OrderedDict
+#from collections import OrderedDict
 
-from pytd.util.fsutils import iterPaths, pathSplitDirs, pathJoin
+from PySide import QtGui
+#from PySide.QtGui import QTreeWidgetItem, QTreeWidgetItemIterator
+from PySide.QtCore import Qt
 
-srcPaths = tuple(iterPaths(r"C:\Users\sebcourtois\Documents"))
+from pytd.util.fsutils import iterPaths
+from pytd.util.sysutils import qtGuiApp
+from pytd.gui.dialogs import QuickTreeDialog
+
 #srcPaths = ["A/B/C", "A/C/D", "A/C/D/E", "A/C/D/F", "A/B/D/F", "A/A/D/F", "A/C/D/G"]
 
-def recurseTree(tree, path, paths):
+app = qtGuiApp()
+if not app:
+    app = QtGui.QApplication(sys.argv)
 
-    for child, children in tree.iteritems():
+dlg = QuickTreeDialog()
+treeWdg = dlg.treeWidget
+treeWdg.setSortingEnabled(True)
+dlg.show()
 
-        print child
+def iterTreeData():
 
-        p = pathJoin(path, child)
+    for p in iterPaths("C:/Users/styx/Google Drive", intermediateDirs=True,
+                       relative=False):
+        data = {"path":p}
 
-        if children:
-            recurseTree(children, p, paths)
-        else:
-            paths.append(p)
+        if osp.isfile(p):
+            roleData = {Qt.BackgroundRole:(0, QtGui.QBrush(Qt.green))}
+            data["roles"] = roleData
 
-tree = OrderedDict()
-for p in srcPaths:
+        yield data
 
-    dirs = pathSplitDirs(p)
+treeData = tuple(iterTreeData())
+treeWdg.createTree(treeData, rootPath="C:/Users/styx/Google Drive")
 
-    children = tree
-    for i, d in enumerate(dirs):
+#item = treeWdg.loadedItems["C:/Users/styx/Google Drive"]
+#print item
+#treeWdg.setRootIndex(treeWdg.indexFromItem(item))
 
-        if d not in children:
-            nxtChilds = OrderedDict()
-            children[d] = nxtChilds
-        else:
-            nxtChilds = children[d]
-
-        children = nxtChilds
-
-outPaths = []
-recurseTree(tree, "", outPaths)
+sys.exit(app.exec_())
 
 #for srcPath, outPath in zip(srcPaths, outPaths):
 #

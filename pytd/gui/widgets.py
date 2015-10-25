@@ -2,7 +2,8 @@
 from PySide import QtGui
 
 from pytd.util.sysutils import toUnicode
-from pytd.util.fsutils import orderedTreeFromPaths, pathJoin
+from pytd.util.fsutils import orderedTreeFromPaths, pathJoin, pathNorm
+from pytd.util.fsutils import pathRelativeTo
 
 class ImageButton(QtGui.QPushButton):
 
@@ -88,27 +89,59 @@ class TabBar(QtGui.QTabBar):
             self.__clearingUp = False
 
 
-class SimpleTree(QtGui.QTreeWidget):
+class QuickTree(QtGui.QTreeWidget):
 
     itemClass = QtGui.QTreeWidgetItem
 
     def __init__(self, parent):
-        super(SimpleTree, self).__init__(parent)
+        super(QuickTree, self).__init__(parent)
 
-        self.loadedItemCache = {}
+        self.loadedItems = {}
 
-    def createTree(self, paths):
+    def createTree(self, pathData, rootPath=""):
 
-        tree = orderedTreeFromPaths(paths)
-        self.createItems(tree, self)
+        pathItems = tuple(((pathNorm(d["path"]), d) for d in pathData))
+        tree = orderedTreeFromPaths(t[0] for t in pathItems)
 
-    def createItems(self, tree, parentItem, parentPath=""):
+        self.createItems(self, tree, dict(pathItems), rootPath=rootPath)
+
+    def createItems(self, parent, tree, data, parentPath="", rootPath=""):
+
+        loadedItems = self.loadedItems
+        itemCls = self.__class__.itemClass
 
         for child, children in tree.iteritems():
 
-            item = self.itemClass(parentItem, [child])
-
             p = pathJoin(parentPath, child)
 
+            bNoItem = False
+            if rootPath:
+                rp = pathRelativeTo(p, rootPath)
+                if (rp == ".") or (".." in rp):
+                    bNoItem = True
+
+            if bNoItem:
+                item = parent
+            elif p in loadedItems:
+                item = loadedItems[p]
+            else:
+                itemData = data.get(p, {})
+                texts = itemData.get("texts", [child])
+
+                item = itemCls(parent, texts)
+
+                flags = itemData.get("flags")
+                if flags is not None:
+                    item.setFlags(flags)
+
+                roles = itemData.get("roles")
+                if roles:
+                    for role, args in roles.iteritems():
+                        column, value = args
+                        item.setData(column, role, value)
+
+                loadedItems[p] = item
+
             if children:
-                self.createItems(children, item, p)
+                self.createItems(item, children, data, p, rootPath=rootPath)
+

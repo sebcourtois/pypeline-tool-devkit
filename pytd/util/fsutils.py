@@ -110,6 +110,8 @@ def iterPaths(sRootDirPath, **kwargs):
     bFiles = kwargs.pop("files", True)
     bDirs = kwargs.pop("dirs", True)
     bEmptyDirs = kwargs.pop("emptyDirs", True)
+    bInterDirs = kwargs.pop("intermediateDirs", False)
+    bRelPath = kwargs.pop("relative", False)
 
     bRecursive = kwargs.pop("recursive", True)
 
@@ -156,17 +158,27 @@ def iterPaths(sRootDirPath, **kwargs):
                 continue
 
             if bFiles:
-                yield pathJoin(sDirPath, sFileName)
+                p = pathJoin(sDirPath, sFileName)
+                yield p if not bRelPath else pathRelativeTo(p, sRootDirPath)
 
         if bDirs:
 
-            bIsLeaf = (not sDirNames)
-            bIsEmpty = bIsLeaf and (not sKeptFileNames)
-            bDoYield = bIsEmpty if bEmptyDirs else bIsLeaf
-            if bDoYield:
-                #print sDirPath, bIsLeaf, bIsEmpty
-                yield addEndSlash(pathNorm(sDirPath))
+            p = pathNorm(sDirPath)
+            if bRelPath:
+                p = pathRelativeTo(p, sRootDirPath)
 
+            bYieldDir = True
+            if p == ".":
+                bYieldDir = False
+            elif not bInterDirs:
+                bIsLeaf = (not sDirNames)
+                bIsEmpty = bIsLeaf and (not sKeptFileNames)
+                bYieldDir = bIsEmpty if bEmptyDirs else bIsLeaf
+
+                #print sDirPath, bIsLeaf, bIsEmpty
+
+            if bYieldDir:
+                yield addEndSlash(p)
 
 def addEndSlash(p):
     return p if p.endswith("/") else p + "/"
@@ -382,7 +394,6 @@ def orderedTreeFromPaths(paths):
 
         children = tree
         for d in dirs:
-
             if d not in children:
                 nxtChilds = OrderedDict()
                 children[d] = nxtChilds

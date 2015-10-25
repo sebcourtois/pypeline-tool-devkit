@@ -7,7 +7,7 @@ from pytd.util.sysutils import toUnicode, toStr, inDevMode, qtGuiApp
 from pytd.util.logutils import confirmMessage
 
 from .ui.ui_logindialog import Ui_LoginDialog
-from .ui.ui_simpletreedialog import Ui_SimpleTreeDialog
+from .ui.ui_simpletreedialog import Ui_QuickTreeDialog
 
 class ConfirmDialog(QtGui.QMessageBox):
 
@@ -341,10 +341,10 @@ def loginDialog(loginFunc=None):
     return LoginDialog.resultData()
 
 
-class SimpleTreeDialog(QtGui.QDialog, Ui_SimpleTreeDialog):
+class QuickTreeDialog(QtGui.QDialog, Ui_QuickTreeDialog):
 
     def __init__(self, *args, **kwargs):
-        super(SimpleTreeDialog, self).__init__(*args, **kwargs)
+        super(QuickTreeDialog, self).__init__(*args, **kwargs)
 
         self.setupUi(self)
 
