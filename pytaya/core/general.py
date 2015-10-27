@@ -78,7 +78,7 @@ def argToStr(arg, bNodeName=True):
 
 def pynodeToStr(arg):
 
-    if isinstance(arg, (tuple, list)):
+    if isinstance(arg, (tuple, list, set)):
         return tuple(argToStr(a, False) for a in arg)
     else:
         return argToStr(arg)

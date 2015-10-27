@@ -1,9 +1,11 @@
 
 from PySide import QtGui
+from PySide.QtCore import Qt
 
-from pytd.util.sysutils import toUnicode
-from pytd.util.fsutils import orderedTreeFromPaths, pathJoin, pathNorm
+from pytd.util.sysutils import toUnicode, isIterable
+from pytd.util.fsutils import pathJoin, pathNorm
 from pytd.util.fsutils import pathRelativeTo
+from pytd.util.utiltypes import OrderedTree
 
 class ImageButton(QtGui.QPushButton):
 
@@ -89,59 +91,91 @@ class TabBar(QtGui.QTabBar):
             self.__clearingUp = False
 
 
-class QuickTree(QtGui.QTreeWidget):
+class QuickTreeItem(QtGui.QTreeWidgetItem):
 
-    itemClass = QtGui.QTreeWidgetItem
+    def __init__(self, *args, **kwargs):
+
+        flags = kwargs.pop("flags", None)
+        roles = kwargs.pop("roles", None)
+
+        super(QuickTreeItem, self).__init__(*args, **kwargs)
+
+        treeWidget = self.treeWidget()
+        flags = flags if flags is not None else treeWidget.defaultFlags
+        if flags is not None:
+            self.setFlags(flags)
+
+        roles = roles if roles else treeWidget.defaultRoles
+        if roles:
+            for role, args in roles.iteritems():
+                column, value = args
+                if isIterable(column):
+                    for c in column:
+                        self.setData(c, role, value)
+                else:
+                    self.setData(column, role, value)
+
+class QuickTree(QtGui.QTreeWidget):
 
     def __init__(self, parent):
         super(QuickTree, self).__init__(parent)
 
         self.loadedItems = {}
+        self.itemClass = QuickTreeItem
+        self.defaultFlags = Qt.ItemFlags(Qt.ItemIsSelectable |
+                                         Qt.ItemIsUserCheckable |
+                                         Qt.ItemIsEnabled)
+        self.defaultRoles = None
+
+        self.itemExpanded.connect(self.resizeAllColumns)
 
     def createTree(self, pathData, rootPath=""):
 
-        pathItems = tuple(((pathNorm(d["path"]), d) for d in pathData))
-        tree = orderedTreeFromPaths(t[0] for t in pathItems)
+        pathItems = tuple(((pathNorm(d.pop("path")), d) for d in pathData))
+        tree = OrderedTree.fromPaths(t[0] for t in pathItems)
 
         self.createItems(self, tree, dict(pathItems), rootPath=rootPath)
+        self.resizeAllColumns()
 
-    def createItems(self, parent, tree, data, parentPath="", rootPath=""):
+    def createItems(self, parentItem, tree, data, parentPath="", rootPath=""):
 
         loadedItems = self.loadedItems
-        itemCls = self.__class__.itemClass
+        itemCls = self.itemClass
 
-        for child, children in tree.iteritems():
+        for current, children in tree.iteritems():
 
-            p = pathJoin(parentPath, child)
+            p = pathJoin(parentPath, current)
 
-            bNoItem = False
+            bBypassItem = False
             if rootPath:
                 rp = pathRelativeTo(p, rootPath)
                 if (rp == ".") or (".." in rp):
-                    bNoItem = True
+                    bBypassItem = True
 
-            if bNoItem:
-                item = parent
+            if bBypassItem:
+                item = parentItem
             elif p in loadedItems:
                 item = loadedItems[p]
             else:
-                itemData = data.get(p, {})
-                texts = itemData.get("texts", [child])
+                kwargs = data.get(p, {}).copy()
+                texts = parentItem.columnCount() * [""]
+                texts[0] = current
+                texts = kwargs.pop("texts", texts)
 
-                item = itemCls(parent, texts)
-
-                flags = itemData.get("flags")
-                if flags is not None:
-                    item.setFlags(flags)
-
-                roles = itemData.get("roles")
-                if roles:
-                    for role, args in roles.iteritems():
-                        column, value = args
-                        item.setData(column, role, value)
+                item = itemCls(parentItem, texts, **kwargs)
 
                 loadedItems[p] = item
 
             if children:
                 self.createItems(item, children, data, p, rootPath=rootPath)
 
+    def itemFromPath(self, p):
+        return self.loadedItems.get(p)
+
+    def resizeAllColumns(self, *args):
+        for c in xrange(self.columnCount()):
+            self.resizeColumnToContents(c)
+
+    def clear(self):
+        self.loadedItems.clear()
+        return QtGui.QTreeWidget.clear(self)

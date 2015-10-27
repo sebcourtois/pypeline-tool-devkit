@@ -1,10 +1,9 @@
 
 import math
 import string
-import os
+from collections import OrderedDict
 
-import imp
-from modulefinder import ModuleFinder
+from pytd.util.fsutils import pathSplitDirs, pathJoin, pathRelativeTo
 
 
 class MemSize(long):
@@ -51,24 +50,45 @@ class MemSize(long):
         return "{0:{1}}".format(t, width) if width != "" else t
 
 
-class TdModuleFinder(ModuleFinder):
+class OrderedTree(OrderedDict):
 
-    def __init__(self, path=None, debug=0, excludes=[], replace_paths=[], **kwargs):
+    def __init__(self, *args, **kwargs):
+        super(OrderedTree, self).__init__(*args, **kwargs)
 
-        ModuleFinder.__init__(self, path, debug, excludes, replace_paths)
+    def iterPaths(self, parentPath="", rootPath=""):
 
-        self.loadedModules = []
+        for sChild, children in self.iteritems():
 
-        self.moduleTypes = kwargs.pop("types", (imp.PY_SOURCE, imp.PY_COMPILED))
+            p = pathJoin(parentPath, sChild)
 
-    def load_module(self, fqname, fp, pathname, fileInfo):
+            bYield = True
+            if rootPath:
+                rp = pathRelativeTo(p, rootPath)
+                if (rp == ".") or (".." in rp):
+                    bYield = False
 
-        _, _, iFileType = fileInfo
+            if bYield:
+                yield p
 
-        m = ModuleFinder.load_module(self, fqname, fp, pathname, fileInfo)
+            for cp in children.iterPaths(p, rootPath):
+                yield cp
 
-        if iFileType in self.moduleTypes:
-            m.__file__ = os.path.normpath(m.__file__).replace("\\", "/")
-            self.loadedModules.append(m)
+    @classmethod
+    def fromPaths(cls, paths):
 
-        return m
+        tree = cls()
+        for p in paths:
+
+            dirs = pathSplitDirs(p)
+
+            children = tree
+            for d in dirs:
+                if d not in children:
+                    nxtChilds = cls()
+                    children[d] = nxtChilds
+                else:
+                    nxtChilds = children[d]
+
+                children = nxtChilds
+
+        return tree

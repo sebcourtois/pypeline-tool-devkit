@@ -37,13 +37,6 @@ def iterTreeData():
 treeData = tuple(iterTreeData())
 treeWdg.createTree(treeData, rootPath="C:/Users/styx/Google Drive")
 
-#item = treeWdg.loadedItems["C:/Users/styx/Google Drive"]
-#print item
-#treeWdg.setRootIndex(treeWdg.indexFromItem(item))
-
 sys.exit(app.exec_())
 
-#for srcPath, outPath in zip(srcPaths, outPaths):
-#
-#    print "\n", srcPath, "\n", outPath
-#    print osp.normcase(srcPath) == osp.normcase(outPath)
+

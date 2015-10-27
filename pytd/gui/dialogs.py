@@ -348,9 +348,16 @@ class QuickTreeDialog(QtGui.QDialog, Ui_QuickTreeDialog):
 
         self.setupUi(self)
 
-        self.treeWidget.itemExpanded.connect(self.resizeAllColumns)
+    def setTreeWidget(self, newTreeWdg):
 
-    def resizeAllColumns(self, item):
-        treeWdg = self.treeWidget
-        for c in xrange(treeWdg.columnCount()):
-            treeWdg.resizeColumnToContents(c)
+        prevTreeWdg = self.treeWidget
+
+        layout = self.layout()
+        iLayIdx = layout.indexOf(prevTreeWdg)
+        layout.insertWidget(iLayIdx, newTreeWdg)
+
+        prevTreeWdg.setAttribute(Qt.WA_DeleteOnClose, True)
+        prevTreeWdg.close()
+
+        self.treeWidget = newTreeWdg
+

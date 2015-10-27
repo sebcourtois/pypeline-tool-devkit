@@ -12,7 +12,6 @@ from distutils import file_util
 
 from .external import parse
 from .sysutils import toUnicode, argToList
-# from .strutils import getIteration, padded
 from .logutils import logMsg
 
 
@@ -383,23 +382,4 @@ def topmostFoundDir(sPath):
 
     return sTestPath
 
-def orderedTreeFromPaths(paths):
 
-    from collections import OrderedDict
-
-    tree = OrderedDict()
-    for p in paths:
-
-        dirs = pathSplitDirs(p)
-
-        children = tree
-        for d in dirs:
-            if d not in children:
-                nxtChilds = OrderedDict()
-                children[d] = nxtChilds
-            else:
-                nxtChilds = children[d]
-
-            children = nxtChilds
-
-    return tree

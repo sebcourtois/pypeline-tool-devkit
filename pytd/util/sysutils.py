@@ -12,8 +12,8 @@ from functools import partial
 from importlib import import_module
 import locale
 import codecs
-
-from .utiltypes import TdModuleFinder
+import imp
+from modulefinder import ModuleFinder
 
 LOCALE_ENCODING = locale.getlocale()[1]
 if not LOCALE_ENCODING:
@@ -336,6 +336,29 @@ def isClassOfModule(sModuleName, cls):
 def listClassesFromModule(sModuleName):
 
     return inspect.getmembers(sys.modules[sModuleName], partial(isClassOfModule, sModuleName))
+
+
+class TdModuleFinder(ModuleFinder):
+
+    def __init__(self, path=None, debug=0, excludes=[], replace_paths=[], **kwargs):
+
+        ModuleFinder.__init__(self, path, debug, excludes, replace_paths)
+
+        self.loadedModules = []
+
+        self.moduleTypes = kwargs.pop("types", (imp.PY_SOURCE, imp.PY_COMPILED))
+
+    def load_module(self, fqname, fp, pathname, fileInfo):
+
+        _, _, iFileType = fileInfo
+
+        m = ModuleFinder.load_module(self, fqname, fp, pathname, fileInfo)
+
+        if iFileType in self.moduleTypes:
+            m.__file__ = os.path.normpath(m.__file__).replace("\\", "/")
+            self.loadedModules.append(m)
+
+        return m
 
 def reloadModule(m):
 
