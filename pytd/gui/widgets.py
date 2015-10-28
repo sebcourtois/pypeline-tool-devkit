@@ -127,7 +127,7 @@ class QuickTree(QtGui.QTreeWidget):
                                          Qt.ItemIsEnabled)
         self.defaultRoles = None
 
-        self.itemExpanded.connect(self.resizeAllColumns)
+        self._connectSignals()
 
     def createTree(self, pathData, rootPath=""):
 
@@ -179,3 +179,17 @@ class QuickTree(QtGui.QTreeWidget):
     def clear(self):
         self.loadedItems.clear()
         return QtGui.QTreeWidget.clear(self)
+
+    def _connectSignals(self):
+        self.itemExpanded.connect(self._onItemExpanded)
+        self.itemCollapsed.connect(self._onItemCollapsed)
+        self.itemClicked.connect(self._onItemClicked)
+
+    def _onItemExpanded(self, item):
+        self.resizeAllColumns()
+
+    def _onItemCollapsed(self, item):
+        self.resizeAllColumns()
+
+    def _onItemClicked(self, item):
+        return
