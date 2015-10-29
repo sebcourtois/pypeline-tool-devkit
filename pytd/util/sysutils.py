@@ -14,6 +14,7 @@ import locale
 import codecs
 import imp
 from modulefinder import ModuleFinder
+from itertools import islice
 
 LOCALE_ENCODING = locale.getlocale()[1]
 if not LOCALE_ENCODING:
@@ -137,6 +138,23 @@ def argToTuple(arg):
 
 def argToSet(arg):
     return _argToSequence(set, arg)
+
+def chunkate(iterable, chunkSize):
+
+    iterLen = len(iterable)
+    n = iterLen / chunkSize
+    m = iterLen % chunkSize
+    if m:
+        n += 1
+
+    for i in xrange(n):
+        start = i * chunkSize
+        if i == (n - 1):
+            stop = start + m
+        else:
+            stop = ((i + 1) * chunkSize)
+        #print start, stop
+        yield islice(iterable, start, stop)
 
 ''
 #===============================================================================
