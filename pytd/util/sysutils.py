@@ -5,7 +5,7 @@ import sys
 import time
 import calendar
 from collections import Iterable
-import copy
+#import copy
 import inspect
 import subprocess
 from functools import partial
