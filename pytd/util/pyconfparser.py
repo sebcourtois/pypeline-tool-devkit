@@ -1,8 +1,8 @@
 
 import re
 import inspect as insp
+from copy import copy, deepcopy
 
-from pytd.util.sysutils import deepCopyOf, copyOf
 from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin
 from pytd.util.strutils import findFmtFields
@@ -71,9 +71,9 @@ class PyConfParser(object):
             return
 
         if bDeepCopy:
-            copiedValue = deepCopyOf(value)
+            copiedValue = deepcopy(value)
         else:
-            copiedValue = copyOf(value)
+            copiedValue = copy(value)
 
         if bSetVar:
             setattr(pyobj, sConfVar, copiedValue)
@@ -195,7 +195,7 @@ class PyConfParser(object):
                 raise ValueError('Could not cast configuration variable to a dictionary: "{0}".'
                                  .format(sVarName))
 
-        return copyOf(value)
+        return copy(value)
 
     def _sectionHasVar(self, sVarName):
         return hasattr(self._pyobj, sVarName)

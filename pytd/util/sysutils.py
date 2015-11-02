@@ -222,23 +222,23 @@ def isOfType(pyObj, pyClassInfo , strict=False):
     else:
         return isinstance(pyObj, pyClassInfo)
 
-def copyOf(value):
-
-    if isinstance(value, (tuple, list)):
-        return value[:]
-    elif isinstance(value, (dict, set)):
-        return value.copy()
-    else:
-        return value
-
-def deepCopyOf(value):
-
-    if isinstance(value, (tuple, list)):
-        return copy.deepcopy(value)
-    elif isinstance(value, (dict, set)):
-        return copy.deepcopy(value)
-    else:
-        return value
+#def copyOf(value):
+#
+#    if isinstance(value, (tuple, list)):
+#        return value[:]
+#    elif isinstance(value, (dict, set)):
+#        return value.copy()
+#    else:
+#        return value
+#
+#def deepCopyOf(value):
+#
+#    if isinstance(value, (tuple, list)):
+#        return copy.deepcopy(value)
+#    elif isinstance(value, (dict, set)):
+#        return copy.deepcopy(value)
+#    else:
+#        return value
 
 def qtGuiApp():
     qApp = qtApp()

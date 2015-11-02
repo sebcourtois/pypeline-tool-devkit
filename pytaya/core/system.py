@@ -131,11 +131,12 @@ def chooseMayaScene(**kwargs):
 def saveScene(**kwargs):
 
     sCurScnPath = mc.file(q=True, sceneName=True)
-    sSceneName = sCurScnPath
     if not sCurScnPath:
+        sCurScnPath = "untitled"
         sSceneName = "untitled scene"
         sFileTypeList = ['mayaAscii', 'mayaBinary']
     else:
+        sSceneName = sCurScnPath
         sFileTypeList = mc.file(q=True, type=True)
 
         if len(sFileTypeList) > 1:
@@ -194,7 +195,7 @@ def saveScene(**kwargs):
 
         bNoFileCheck = kwargs.pop("noFileCheck", True)
 
-        if sCurScnPath == "":
+        if sCurScnPath == "untitled":
 
             sFileList = chooseMayaScene(ff=sFileTypeList)
             if not sFileList:
@@ -206,7 +207,6 @@ def saveScene(**kwargs):
             return pm.saveAs(sFileList[0], force=True)
 
         else:
-
             if bNoFileCheck:
                 pmu.putEnv("DAVOS_FILE_CHECK", "")
 

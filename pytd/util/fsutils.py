@@ -104,7 +104,7 @@ def ignorePatterns(*patterns):
 def iterPaths(sRootDirPath, **kwargs):
 
     if not osp.isdir(sRootDirPath):
-        raise ValueError, 'No such directory found: "{0}"'.format(sRootDirPath)
+        raise ValueError('No such directory found: "{0}"'.format(sRootDirPath))
 
     bFiles = kwargs.pop("files", True)
     bDirs = kwargs.pop("dirs", True)

@@ -1,9 +1,10 @@
 
 import re
 from functools import partial
+from copy import copy
 
 from pytd.util.logutils import logMsg
-from pytd.util.sysutils import copyOf, argToList
+from pytd.util.sysutils import argToList
 
 class EditState:
     Disabled = 0
@@ -136,11 +137,11 @@ class MetaProperty(object):
         else:
             value = self.propertyDct.get(sParam, default)
 
-        return copyOf(value)
+        return copy(value)
 
     def defaultValue(self):
 
-        value = copyOf(self.propertyDct.get("default", "undefined"))
+        value = copy(self.propertyDct.get("default", "undefined"))
         return argToList(value) if self.__isMulti else value
 
     def isMulti(self):

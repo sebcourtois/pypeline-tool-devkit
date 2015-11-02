@@ -74,12 +74,12 @@ class PropertyItem(QtGui.QStandardItem):
         if self.column() == 0:
 
             cachedPropertyItems = self.model()._cachedPropertyItems
-            cacheKey = id(metaprpty)
+            mpCacheKey = id(metaprpty)
 
-            curItems = cachedPropertyItems.get(cacheKey)
+            curItems = cachedPropertyItems.get(mpCacheKey)
             if not curItems:
                 curItems = [self]
-                cachedPropertyItems[cacheKey] = curItems
+                cachedPropertyItems[mpCacheKey] = curItems
             else:
                 curItems.append(self)
 
