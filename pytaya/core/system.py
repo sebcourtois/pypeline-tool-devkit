@@ -23,13 +23,15 @@ def importFile(sFilePath, **kwargs):
         raise ValueError, 'Import failed. No such file found : "{0}"'.format(sResolvedPath)
 
     kwargs.pop("defaultNamespace", kwargs.pop("dns", None))
-    bReference = kwargs.pop("reference", kwargs.pop("r", None))
+    bReference = kwargs.pop("reference", kwargs.pop("r", False))
     bViewFit = kwargs.pop('viewFit', False)
     bOutNewNodes = kwargs.pop('returnNewNodes', kwargs.pop('rnn', True))
     bPreserveRefs = kwargs.pop('preserveReferences', kwargs.pop('pr', True))
+    bNewScene = kwargs.pop('newScene', kwargs.pop('nsc', "NoEntry"))
 
     if bReference:
         bUseNamespaces = True
+        bNewScene = False
     else:
         bUseNamespaces = kwargs.pop('useNamespaces', kwargs.pop('uns', False))
 
@@ -40,13 +42,11 @@ def importFile(sFilePath, **kwargs):
             sNamespace = osp.basename(sResolvedPath).rsplit(".", 1)[0]
 
     ##Three states kwarg:
-    ##if newFile == True , importing NewScene is forced
-    ##if newFile == False, importing in the CurrentScene
-    ##if newFile == "NoEntry", so choose between NewScene and CurrentScene
+    ##if newScene == True , importing NewScene is forced
+    ##if newScene == False, importing in the CurrentScene
+    ##if newScene == "NoEntry", so choose between NewScene and CurrentScene
 
-    bNewFile = kwargs.pop('newFile', kwargs.pop('nf', "NoEntry"))
-
-    if bNewFile == "NoEntry":
+    if bNewScene == "NoEntry":
 
         sConfirm = pm.confirmDialog(title="Import File"
                                     , message='Import file into ... ?'
@@ -60,9 +60,9 @@ def importFile(sFilePath, **kwargs):
             logMsg("Cancelled !" , warning=True)
             return
 
-        bNewFile = True if sConfirm == "New Scene" else False
+        bNewScene = True if sConfirm == "New Scene" else False
 
-    if bNewFile:
+    if bNewScene:
         if newScene(**kwargs):
             return
 
@@ -219,7 +219,7 @@ def newScene(**kwargs):
     if not bForce:
         sScenePath = saveScene()
     else:
-        sScenePath = "newFileForced"
+        sScenePath = "newSceneForced"
 
     if sScenePath:
         pm.newFile(force=True)
