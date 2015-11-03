@@ -194,7 +194,7 @@ def copyFile(sSrcFilePath, sDestPath, **kwargs):
     if osp.normcase(sSrcFilePath) == osp.normcase(sDestPath):
         raise ValueError, "Path of source and destination files are the same."
 
-    logMsg(u"Copying '{}'\n    >> '{}'\n".format(sSrcFilePath, sDestPath))
+    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcFilePath, sDestPath))
 
     return file_util.copy_file(sSrcFilePath, sDestPath, **kwargs)
 
