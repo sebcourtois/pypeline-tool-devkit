@@ -9,6 +9,7 @@ class Authenticator(object):
 
     def __init__(self):
         self.authenticated = False
+        self.userLogin = ""
 
     def loggedUser(self):
         return {}
