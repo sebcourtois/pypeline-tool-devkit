@@ -91,7 +91,7 @@ class MetaObject(object):
             sSetter = "set" + upperFirst(sProperty)
             setter = getattr(self, sSetter, None)
 
-            sMsg = u"Setting {0}.{1} to {2}( {3} ) using {4}".format(
+            sMsg = "Setting {0}.{1} to {2}( {3} ) using {4}".format(
                     self, sProperty, type(value).__name__, toStr(value),
                     setter if setter else "_setPrpty")
             logMsg(sMsg, log="debug")
