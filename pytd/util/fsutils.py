@@ -8,7 +8,7 @@ import json
 import stat
 import hashlib
 
-from distutils import file_util
+from distutils.file_util import copy_file
 
 from .external import parse
 from .sysutils import toUnicode, argToList
@@ -189,14 +189,31 @@ def commonDir(sPathList):
     sDir = osp.commonprefix(sPathList)
     return sDir if (sDir[-1] in ("\\", "/")) else (osp.dirname(sDir) + "/")
 
-def copyFile(sSrcFilePath, sDestPath, **kwargs):
+def copyFile(sSrcPath, sDestPath, **kwargs):
 
-    if osp.normcase(sSrcFilePath) == osp.normcase(sDestPath):
-        raise ValueError, "Path of source and destination files are the same."
+    if osp.isdir(sDestPath):
+        sDestPath = pathJoin(sDestPath, osp.basename(sSrcPath))
 
-    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcFilePath, sDestPath))
+    if sameFile(sSrcPath, sDestPath):
+        sMsg = u"Source and destination are the same file:"
+        sMsg += u"\n    source:      ", sSrcPath
+        sMsg += u"\n    destination: ", sDestPath
+        raise EnvironmentError(sMsg)
 
-    return file_util.copy_file(sSrcFilePath, sDestPath, **kwargs)
+    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcPath, sDestPath))
+
+    return copy_file(sSrcPath, sDestPath, **kwargs)
+
+def sameFile(sSrcPath, sDestPath):
+    # Macintosh, Unix.
+    if hasattr(osp, 'samefile'):
+        try:
+            return osp.samefile(sSrcPath, sDestPath)
+        except OSError:
+            return False
+
+    # All other platforms: check for same pathname.
+    return (osp.normcase(osp.abspath(sSrcPath)) == osp.normcase(osp.abspath(sDestPath)))
 
 def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
 
