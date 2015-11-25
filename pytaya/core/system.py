@@ -7,7 +7,7 @@ import maya.cmds as mc
 
 from pytd.util.logutils import logMsg
 from pytd.util.fsutils import pathResolve
-from pytd.util.sysutils import listForNone, argToTuple
+from pytd.util.sysutils import listForNone, argToTuple, toStr
 
 def importFile(sFilePath, **kwargs):
 
@@ -231,4 +231,14 @@ def openScene(*args, **kwargs):
     if kwargs.pop("noFileCheck", True):
         pmu.putEnv("DAVOS_FILE_CHECK", "")
 
-    return pm.openFile(*args, **kwargs)
+    bFail = kwargs.pop("fail", True)
+
+    try:
+        return pm.openFile(*args, **kwargs)
+    except RuntimeError, e:
+        if bFail:
+            raise
+        else:
+            pm.displayError(toStr(e))
+
+    return None
