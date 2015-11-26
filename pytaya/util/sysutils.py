@@ -2,6 +2,8 @@
 import os
 import sys
 
+import maya.cmds as mc
+
 from pytd.util.fsutils import pathJoin
 
 def currentMayapy():
@@ -16,3 +18,27 @@ def currentMayapy():
                                .format(p))
 
     return p
+
+def withSelectionRestored(func):
+
+    def doIt(*args, **kwargs):
+
+        bKeepSel = kwargs.pop("restoreSelection", kwargs.pop("rsl", True))
+
+        if bKeepSel:
+            sPrevSelList = mc.ls(sl=True)[:]
+
+        try:
+            ret = func(*args, **kwargs)
+        finally:
+            if bKeepSel:
+                sNewSelList = mc.ls(sl=True)[:]
+                if sNewSelList:
+                    try:mc.select(sNewSelList, deselect=True, noExpand=True)
+                    except ValueError:pass
+
+                if sPrevSelList:
+                    try:mc.select(sPrevSelList, add=True, noExpand=True)
+                    except ValueError:pass
+        return ret
+    return doIt
