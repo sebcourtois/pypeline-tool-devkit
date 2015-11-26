@@ -229,29 +229,31 @@ def transferUvAndShaders(oSrcGrp, oDestGrp):
                 for oShape in oShapeList:
                     if oShape.getAttr("intermediateObject") and oShape.attr("worldMesh").outputs():
                         bShapeOrig = True
-                        oShape.setAttr ("intermediateObject", False)
+                        oShape.setAttr("intermediateObject", False)
                         oTargetShape = oShape
                         break
             else:
                 oTargetShape = oTargetCurrentShape
 
             if oTargetShape:
-                print ('transferring uvs and materials from "{0}" to "{1}"'
-                       .format(oSourceShape, oTargetShape))
+                try:
+                    print ('transferring uvs and shaders from "{0}" to "{1}"'
+                           .format(oSourceShape, oTargetShape))
 
-                if len(oTargetCurrentShape.getPoints()) != len(oSourceShape.getPoints()):
-                    notCompatibleShapeList.extend([oSourceShape, oTargetCurrentShape])
+                    if oTargetCurrentShape.numVertices() != oSourceShape.numVertices():
+                        notCompatibleShapeList.extend([oSourceShape, oTargetCurrentShape])
 
-                pm.transferAttributes(oSourceShape, oTargetShape, transferPositions=0,
-                                      transferNormals=0, transferUVs=2, transferColors=2,
-                                      sampleSpace=5, sourceUvSpace="map1", targetUvSpace="map1",
-                                      searchMethod=3, flipUVs=0, colorBorders=1)
-                pm.transferShadingSets(oSourceShape, oTargetShape , sampleSpace=0, searchMethod=3)
+                    pm.transferAttributes(oSourceShape, oTargetShape, transferPositions=0,
+                                          transferNormals=0, transferUVs=2, transferColors=2,
+                                          sampleSpace=5, sourceUvSpace="map1", targetUvSpace="map1",
+                                          searchMethod=3, flipUVs=0, colorBorders=1)
 
-                pm.delete(oTargetShape, ch=True)
+                    pm.transferShadingSets(oSourceShape, oTargetShape, sampleSpace=0, searchMethod=3)
 
-                if bShapeOrig:
-                    oTargetShape.setAttr ("intermediateObject", True)
+                    pm.delete(oTargetShape, ch=True)
+                finally:
+                    if bShapeOrig:
+                        oTargetShape.setAttr("intermediateObject", True)
 
             pm.select(clear=True)
             pm.select(oSourceShape, r=True)
