@@ -56,7 +56,7 @@ def processSelectedReferences(func):
         sProcessLabel = kwargs.pop("processLabel", "Process")
         bSelected = kwargs.pop("selected", kwargs.pop("sl", True))
         bConfirm = kwargs.pop("confirm", True)
-        bTestRes = kwargs.pop("testReturn", True)
+#        bTestRes = kwargs.pop("testReturn", True)
 
         if bAllIfNoSel and bSelected:
             if not mc.ls(sl=True):
@@ -96,24 +96,18 @@ def processSelectedReferences(func):
             for oRef in oRefList:
                 oRef.unload()
 
-        def testRes(res):
-            if not bTestRes:
-                return True
-            else:
-                return True if res else False
-
-        resList = []
-        for oRef in oRefList:
-            res = func(oRef, *args, **kwargs)
-            if testRes(res):
-                if isinstance(res, (tuple, list)):
-                    resList.extend(res)
-                else:
-                    resList.append(res)
-
-        if bUnload:
+        try:
+            resultList = []
+            kwargs.update(processResults=resultList)
             for oRef in oRefList:
-                oRef.load()
+                func(oRef, *args, **kwargs)
+        finally:
+            if bUnload:
+                for oRef in oRefList:
+                    try:
+                        oRef.load()
+                    except Exception, e:
+                        pm.displayError(e)
 
-        return oRefList, resList
+        return oRefList, resultList
     return doIt

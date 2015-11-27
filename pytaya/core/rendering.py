@@ -1,12 +1,13 @@
 
 
 import maya.cmds
-from pytaya.core.general import listForNone
-from pytd.util.logutils import logMsg
 mc = maya.cmds
 
 import pymel.core
 pm = pymel.core
+
+from pytaya.core.general import listForNone
+from pytd.util.logutils import logMsg
 
 
 def fileNodesFromObjects(oObjList):

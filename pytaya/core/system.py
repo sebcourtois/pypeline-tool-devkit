@@ -130,7 +130,7 @@ def chooseMayaScene(**kwargs):
 
 def saveScene(**kwargs):
 
-    sCurScnPath = pm.sceneName()
+    sCurScnPath = mc.file(q=True, sceneName=True)
     if not sCurScnPath:
         sCurScnPath = "untitled"
         sSceneName = "untitled scene"
