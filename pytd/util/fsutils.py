@@ -71,7 +71,15 @@ def pathParse(sPathFormat, sPath):
 
     return parse.parse(fmt, s)
 
+def pathReSub(pattern, repl, string, count=0, flags=0):
+
+    if os.name == "nt":
+        flags |= re.IGNORECASE
+
+    return re.sub(pattern, repl, string, count, flags)
+
 def pathStripDrive(p):
+
     return pathJoin(*pathSplitDirs(p)[1:])
 
 def pathSplitDirs(p):
