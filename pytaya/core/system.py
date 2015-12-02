@@ -235,7 +235,7 @@ def newScene(**kwargs):
 
     return sScenePath
 
-def openScene(*args, **kwargs):
+def openScene(sScenePath, **kwargs):
 
     if kwargs.pop("noFileCheck", True):
         pmu.putEnv("DAVOS_FILE_CHECK", "")
@@ -243,11 +243,11 @@ def openScene(*args, **kwargs):
     bFail = kwargs.pop("fail", True)
 
     try:
-        return pm.openFile(*args, **kwargs)
+        return pm.openFile(sScenePath, **kwargs)
     except RuntimeError, e:
         if bFail:
             raise
         else:
             pm.displayError(toStr(e.message))
 
-    return None
+    return sScenePath
