@@ -67,13 +67,11 @@ def importFile(sFilePath, **kwargs):
             return
 
     if bReference:
-
         oNewNodeList = pm.createReference(sFilePath
                                         , namespace=sNamespace
                                         , returnNewNodes=bOutNewNodes
                                         , **kwargs)
     else:
-
         if bUseNamespaces:
             kwargs["namespace"] = sNamespace
 
@@ -89,16 +87,16 @@ def importFile(sFilePath, **kwargs):
 
     return oNewNodeList
 
-def getMayaFileTypeFromExtension(sFilePath):
+def getMayaSceneTypeFromExtension(sFilePath):
 
     _, sFileExt = osp.splitext(sFilePath)
 
-    sFileTypeExtDict = {
+    sSceneTypeExtDict = {
                     ".ma": "mayaAscii",
                     ".mb": "mayaBinary"
                     }
 
-    sType = sFileTypeExtDict.get(sFileExt, None)
+    sType = sSceneTypeExtDict.get(sFileExt, None)
 
     if not sType:
         raise RuntimeError, 'Invalid extension : "{0}"'.format(sFileExt)
@@ -134,26 +132,37 @@ def saveScene(**kwargs):
     if not sCurScnPath:
         sCurScnPath = "untitled"
         sSceneName = "untitled scene"
-        sFileTypeList = ['mayaAscii', 'mayaBinary']
+        sSceneTypeList = ['mayaAscii', 'mayaBinary']
     else:
         sSceneName = sCurScnPath
-        sFileTypeList = mc.file(q=True, type=True)
+        sExt = osp.splitext(sCurScnPath)[1].lower()
 
-        if len(sFileTypeList) > 1:
+        sSceneTypeList = []
+        if sExt:
+            if sExt == ".ma":
+                sSceneTypeList = ['mayaAscii']
+            elif sExt == ".mb":
+                sSceneTypeList = ['mayaBinary']
+
+        if not sSceneTypeList:
+            raise ValueError("Invalid maya scene extension: '{}'".format(sExt))
+            #sSceneTypeList = mc.file(q=True, type=True)
+
+        if len(sSceneTypeList) > 1:
             raise RuntimeError, 'Saving "{0}" : More than one type matches this file : {1}'\
-                                .format(sCurScnPath, sFileTypeList)
+                                .format(sCurScnPath, sSceneTypeList)
         else:
-            sFileType = sFileTypeList[0]
+            sSceneType = sSceneTypeList[0]
 
-    sWantedFileType = kwargs.get('fileType', kwargs.get('ft', ''))
+    sWantedSceneType = kwargs.get('fileType', kwargs.get('ft', ''))
 
     bForce = True
-    if sWantedFileType and (sWantedFileType != sFileType):
+    if sWantedSceneType and (sWantedSceneType != sSceneType):
 
-        if sWantedFileType not in ('mayaAscii', 'mayaBinary'):
-            raise ValueError('Invalid file type : "{0}"'.format(sWantedFileType))
+        if sWantedSceneType not in ('mayaAscii', 'mayaBinary'):
+            raise ValueError('Invalid file type : "{0}"'.format(sWantedSceneType))
 
-        sFileType = sWantedFileType
+        sSceneType = sWantedSceneType
         bForce = False
 
     else:
@@ -197,7 +206,7 @@ def saveScene(**kwargs):
 
         if sCurScnPath == "untitled":
 
-            sFileList = chooseMayaScene(ff=sFileTypeList)
+            sFileList = chooseMayaScene(ff=sSceneTypeList)
             if not sFileList:
                 return ""
 
@@ -210,7 +219,7 @@ def saveScene(**kwargs):
             if bNoFileCheck:
                 pmu.putEnv("DAVOS_FILE_CHECK", "")
 
-            return pm.saveFile(force=bForce, type=sFileType)
+            return pm.saveFile(force=bForce, type=sSceneType)
 
 def newScene(**kwargs):
 
