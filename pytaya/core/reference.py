@@ -9,7 +9,7 @@ def listReferences(**kwargs):
 
     bSelected = kwargs.pop("selected", kwargs.pop("sl", False))
     bLocked = kwargs.pop("locked", None)
-    bLoaded = kwargs.pop("loaded", True)
+    bLoaded = kwargs.pop("loaded", None)
     bTopRef = kwargs.pop("topReference", kwargs.pop("top", True))
 
     if bSelected:
@@ -56,7 +56,6 @@ def processSelectedReferences(func):
         sProcessLabel = kwargs.pop("processLabel", "Process")
         bSelected = kwargs.pop("selected", kwargs.pop("sl", True))
         bConfirm = kwargs.pop("confirm", True)
-#        bTestRes = kwargs.pop("testReturn", True)
 
         if bAllIfNoSel and bSelected:
             if not mc.ls(sl=True):
@@ -79,7 +78,6 @@ def processSelectedReferences(func):
             sConfirmText = sProcessLabel + " All References ?"
             sRefNames = ""
 
-
         if bConfirm:
             sConfirmMsg = (sConfirmText + '\n\n' + sRefNames) if sRefNames else sConfirmText
 
@@ -90,7 +88,6 @@ def processSelectedReferences(func):
             if sConfirm == 'Cancel':
                 logMsg("Cancelled !" , warning=True)
                 return [], []
-
 
         if bUnload:
             for oRef in oRefList:
