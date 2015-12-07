@@ -11,13 +11,12 @@ from pytd.util.logutils import logMsg
 
 
 def fileNodesFromObjects(oObjList):
+    return fileNodesFromShaders(shadersFromObjects(oObjList))
 
-    oMatList = shadersFromObjects(oObjList)
+def fileNodesFromShaders(oMatList):
 
     oFileNodeList = set()
-
     for oMat in oMatList:
-
         oFileNodeList.update(oMat.listHistory(type="file"))
 
     return list(oFileNodeList)
@@ -34,7 +33,7 @@ def shadersFromObjects(oObjList):
         oMatList.extend(pm.ls(listForNone(mc.listConnections(oSGMat.name(),
                                                              source=True,
                                                              destination=False)),
-                                type=mc.listNodeTypes('shader', ex="texture")))
+                              type=mc.listNodeTypes('shader', ex="texture")))
     return oMatList
 
 def shadingGroupsFromObjects(oObjList):
