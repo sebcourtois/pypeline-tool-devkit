@@ -27,6 +27,9 @@ def pathNorm(p):
 def normCase(p):
     return osp.normcase(p).replace("\\", "/")
 
+def pathAbs(p):
+    return osp.abspath(p).replace("\\", "/")
+
 def pathJoin(*args):
     try:
         p = osp.join(*args)
@@ -78,8 +81,17 @@ def pathReSub(pattern, repl, string, count=0, flags=0):
 
     return re.sub(pattern, repl, string, count, flags)
 
-def pathStripDrive(p):
+def pathStartsWith(sPath, sParentPath):
 
+    sParentPath = normCase(pathAbs(sParentPath))
+    sPathDirs = pathSplitDirs(normCase(pathAbs(sPath)))
+
+    numDirs = len(pathSplitDirs(sParentPath))
+    sAlignedPath = pathJoin(*sPathDirs[:numDirs])
+
+    return sAlignedPath == sParentPath
+
+def pathStripDrive(p):
     return pathJoin(*pathSplitDirs(p)[1:])
 
 def pathSplitDirs(p):
@@ -96,6 +108,7 @@ def pathSplitDirs(p):
     res.extend(p.split("/"))
 
     return res
+
 
 def ignorePatterns(*patterns):
     """Function that can be used as iterPaths() ignore parameters.
