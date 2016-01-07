@@ -1,5 +1,6 @@
 
 import os.path as osp
+from collections import OrderedDict
 
 import pymel.core as pm
 import pymel.util as pmu
@@ -8,6 +9,17 @@ import maya.cmds as mc
 from pytd.util.logutils import logMsg
 from pytd.util.fsutils import pathResolve
 from pytd.util.sysutils import listForNone, argToTuple, toStr
+from pytd.util.strutils import upperFirst
+
+try:
+    pm.mel.source("exportAnimSharedOptions")
+except pm.MelError as e:
+    pm.displayError(toStr(e))
+
+try:
+    pm.mel.source("importAnimSharedOptions")
+except pm.MelError as e:
+    pm.displayError(toStr(e))
 
 def importFile(sFilePath, **kwargs):
 
@@ -251,3 +263,144 @@ def openScene(sScenePath, **kwargs):
             pm.displayError(toStr(e.message))
 
     return sScenePath
+
+_toBool = lambda x: int(bool(int(x)))
+
+ATOM_EXPORT_OPTS = OrderedDict((
+("animExportSDK", _toBool),
+("animExportConstraints", _toBool),
+("animExportAnimLayers", _toBool),
+("animExportStatics", _toBool),
+("animExportBaked", _toBool),
+("animExportPoints", _toBool),
+("animExportHierarchy", {"selected":1, "below":2}),
+("animExportChannels", {"all_keyable":1, "from_channel_box":2}),
+("animExportTimeRange", {"all":1, "time_slider":2, "single_frame":3, "start_end":4}),
+("animExportStartTime", float),
+("animExportEndTime", float),
+)
+)
+
+def getAtomExportOptions():
+
+    pm.mel.setExportAnimSharedOptionVars(0)
+    pm.mel.exportAnimSharedOptionsCallback()
+
+    return OrderedDict((k, pm.optionVar[k])  for k in ATOM_EXPORT_OPTS.iterkeys())
+
+def exportAtomFile(sFilePath, **kwargs):
+
+#    print " before ".center(100, "-")
+#    for k, v in getAtomExportOptions().iteritems():
+#        print k, v
+
+    savedOpts = getAtomExportOptions()
+    try:
+
+        pm.mel.setExportAnimSharedOptionVars(1)# reset to default options
+
+        lowerFirst = lambda s: s[0].lower() + s[1:] if s != "SDK" else s
+        sValidKwargs = tuple(lowerFirst(o.replace("animExport", ""))
+                             for o in ATOM_EXPORT_OPTS.keys())
+
+        for k, v in kwargs.iteritems():
+
+            if k not in sValidKwargs:
+                raise TypeError("Unexpected keyword argument: '{}'. \n    Are valid: {}"
+                                .format(k, ", ".join(sValidKwargs)))
+
+            sOpt = "animExport" + upperFirst(k)
+            valueCast = ATOM_EXPORT_OPTS[sOpt]
+            if isinstance(valueCast, dict):
+                try:
+                    value = valueCast[v]
+                except KeyError:
+                    raise ValueError("Invalid '{}' value. Got '{}', expected {}."
+                                     .format(k, v, valueCast.keys()))
+            else:
+                value = valueCast(v)
+
+            pm.optionVar[sOpt] = value
+
+        sHeader = " Atom Export ".center(100, "-")
+        print sHeader
+        for k, v in getAtomExportOptions().iteritems():
+            print k, v
+
+        pm.mel.doExportAtom(1, [sFilePath])
+
+        print sHeader
+
+    finally:
+        for k, v in savedOpts.iteritems():
+            pm.optionVar[k] = v
+
+#        print " after ".center(100, "-")
+#        for k, v in getAtomExportOptions().iteritems():
+#            print k, v
+
+    return
+
+_toTimeRange = lambda ts: ":".join(("{:.4f}".format(t).rstrip(".0") for t in ts))
+
+ATOM_IMPORT_KWARGS = OrderedDict((
+("targetTime", {"start_end":1, "time_slider":2, "from_file":3}),
+("srcTime", _toTimeRange),
+("dstTime", _toTimeRange),
+("option", ["insert", "scaleInsert", "replace", "scaleReplace"]),
+("match", ["hierarchy", "string"]),
+("selected", ["selectedOnly", "childrenToo"]),
+("search", toStr),
+("replace", toStr),
+("prefix", toStr),
+("suffix", toStr),
+("mapFile", toStr),
+)
+)
+
+def importAtomFile(sFilePath, **kwargs):
+
+    if not osp.isfile(sFilePath):
+        raise EnvironmentError("No such file: '{}'".format(sFilePath))
+
+    sBaseName = osp.basename(osp.splitext(sFilePath)[0])
+    sNamespace = kwargs.pop("namespace", kwargs.pop("ns", sBaseName))
+
+    sValidKwargs = ATOM_IMPORT_KWARGS.keys()
+
+    sOptList = []
+    for k, v in kwargs.iteritems():
+
+        if k not in sValidKwargs:
+            raise TypeError("Unexpected keyword argument: '{}'. \n    Are valid: {}"
+                            .format(k, ", ".join(sValidKwargs)))
+
+        valueCast = ATOM_IMPORT_KWARGS[k]
+        if isinstance(valueCast, dict):
+            try:
+                value = valueCast[v]
+            except KeyError:
+                raise ValueError("Invalid '{}' value: '{}'. Are valid: {}."
+                                 .format(k, v, valueCast.keys()))
+        elif isinstance(valueCast, list):
+            if v in valueCast:
+                value = v
+            else:
+                raise ValueError("Invalid '{}' value: '{}'. Are valid: {}."
+                                 .format(k, v, valueCast))
+        else:
+            try:
+                value = valueCast(v)
+            except Exception as e:
+                raise ValueError("Invalid '{}' value: {}. {}."
+                                 .format(k, v, toStr(e)))
+
+        sOpt = "{}={}".format(k, value)
+        sOptList.append(sOpt)
+
+    print ";".join(sOptList)
+
+    return pm.importFile(sFilePath, type="atomImport",
+                         renameAll=True,
+                         namespace=sNamespace,
+                         options=";".join(sOptList))
