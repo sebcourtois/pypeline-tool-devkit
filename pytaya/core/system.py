@@ -1,6 +1,8 @@
 
 import os.path as osp
+import re
 from collections import OrderedDict
+import itertools as itr
 
 import pymel.core as pm
 import pymel.util as pmu
@@ -341,7 +343,7 @@ def exportAtomFile(sFilePath, **kwargs):
 
     return
 
-_toTimeRange = lambda ts: ":".join(("{:.4f}".format(t).rstrip(".0") for t in ts))
+_toTimeRange = lambda ts: ":".join((re.sub("0+$", "", "{:.4f}".format(t)).rstrip(".") for t in ts))
 
 ATOM_IMPORT_KWARGS = OrderedDict((
 ("targetTime", {"start_end":1, "time_slider":2, "from_file":3}),
@@ -400,7 +402,54 @@ def importAtomFile(sFilePath, **kwargs):
 
     print ";".join(sOptList)
 
-    return pm.importFile(sFilePath, type="atomImport",
+    sSelected = kwargs.get("selected", "selectedOnly")
+    if sSelected == "selectedOnly":
+        sXfmList = mc.ls(sl=True, tr=True)
+    elif sSelected == "childrenToo":
+        sXfmList = mc.ls(sl=True, dag=True, tr=True)
+
+    def listAttr_(sNode):
+        return listForNone(mc.listAttr(sNode, k=True, ud=True))
+
+    sPreAttrSet = set()
+    for sXfm in sXfmList:
+        sPreAttrSet.update(sXfm + "." + attr for attr in listAttr_(sXfm))
+
+    res = pm.importFile(sFilePath, type="atomImport",
                          renameAll=True,
                          namespace=sNamespace,
                          options=";".join(sOptList))
+
+    sPostAttrSet = set()
+    for sXfm in sXfmList:
+        sPostAttrSet.update(sXfm + "." + attr for attr in listAttr_(sXfm))
+
+    keyFunc = lambda s: s.split(".", 1)[0]
+    sNewAttrList = sorted((sPostAttrSet - sPreAttrSet), key=keyFunc)
+    if sNewAttrList:
+        for sXfm, attrs in itr.groupby(sNewAttrList, keyFunc):
+
+            oXfm = pm.PyNode(sXfm)
+            oShape = oXfm.getShape()
+            if not oShape:
+                continue
+
+            sAttrSet = set(a.split(".", 1)[1] for a in attrs)
+            sAttrList = list(sAttrSet & set(pm.listAttr(oShape, k=True)))
+            if not sAttrList:
+                continue
+
+            sSep = "\n    -"
+            print (("transfering imported attrs from '{}' to '{}':" + sSep + "{}")
+                   .format(oXfm, oShape, sSep.join(sAttrList)))
+            pm.copyAttr(oXfm, oShape, attribute=sAttrList,
+                        inConnections=True, keepSourceConnections=True)
+
+            for sAttr in sAttrList:
+                #print "deleting imported attr:", oXfm.name() + "." + sAttr
+                oXfm.deleteAttr(sAttr)
+
+    return res
+
+
+
