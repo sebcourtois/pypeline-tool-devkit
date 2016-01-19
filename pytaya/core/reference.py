@@ -65,14 +65,14 @@ def processSelectedReferences(func):
 
         if not oRefList:
             if bSelected:
-                logMsg("No referenced objects selected !" , warning=True)
+                pm.displayWarning("No referenced objects selected !")
             else:
-                logMsg("No referenced objects to {0} !!".format(sProcessLabel.lower()) , warning=True)
+                pm.displayWarning("No referenced objects to {0} !!".format(sProcessLabel.lower()))
 
             return [], []
 
         if bSelected:
-            sConfirmText = sProcessLabel + " Selected References ?"
+            sConfirmText = sProcessLabel + " {} Selected References ?".format(len(oRefList))
             sRefNames = '  '.join(oRef.namespace for oRef in oRefList)
         else:
             sConfirmText = sProcessLabel + " All References ?"
