@@ -140,9 +140,31 @@ def chooseMayaScene(**kwargs):
                           selectFileFilter=sSelFilter,
                           **kwargs)
 
+def currentScene(checkOpeningError=False):
+
+    sCurScnPath = pm.sceneName()
+    if not checkOpeningError:
+        return sCurScnPath
+
+    if sCurScnPath and (not mc.file(q=True, sceneName=True)):
+        sMsg = "Maya found ERRORS reading the current file !"
+        sConfirm = pm.confirmDialog(title='WARNING !',
+                                    message=sMsg,
+                                    button=['Continue', 'Abort'],
+                                    defaultButton='Abort',
+                                    cancelButton='Abort',
+                                    dismissString='Abort',
+                                    icon="warning")
+        if sConfirm == 'Abort':
+            raise RuntimeError(sMsg)
+
+    return sCurScnPath
+
 def saveScene(**kwargs):
 
-    sCurScnPath = mc.file(q=True, sceneName=True)
+    sSceneType = ""
+
+    sCurScnPath = currentScene(checkOpeningError=kwargs.pop("checkOpeningError", True))
     if not sCurScnPath:
         sCurScnPath = "untitled"
         sSceneName = "untitled scene"
@@ -170,24 +192,19 @@ def saveScene(**kwargs):
 
     sWantedSceneType = kwargs.get('fileType', kwargs.get('ft', ''))
 
-    bForce = True
     if sWantedSceneType and (sWantedSceneType != sSceneType):
 
         if sWantedSceneType not in ('mayaAscii', 'mayaBinary'):
-            raise ValueError('Invalid file type : "{0}"'.format(sWantedSceneType))
+            raise ValueError('Invalid file type: "{0}"'.format(sWantedSceneType))
 
         sSceneType = sWantedSceneType
-        bForce = False
-
     else:
         if not mc.file(q=True, modified=True):
-            logMsg('Saving "{0}" : No changes to save.'.format(sSceneName) , warning=True)
+            pm.displayWarning("Current scene has NO changes to save: '{}'.".format(sSceneName))
             return sCurScnPath
 
-    bConfirm = kwargs.get("confirm", True)
-
-    if bConfirm:
-
+    bPrompt = kwargs.get("prompt", True)
+    if bPrompt:
         if kwargs.get("discard", True):
             buttonList = ("Save", "Don't Save", "Cancel")
             sDismiss = "Don't Save"
@@ -197,12 +214,14 @@ def saveScene(**kwargs):
             sDismiss = "Cancel"
             sConfirmEnd = "!"
 
-        sConfirm = pm.confirmDialog(title="Warning : Save Your Current Scene"
-                                    , message='Save changes to :\n\n{0} {1}'.format(sSceneName, sConfirmEnd)
-                                    , button=buttonList
-                                    , defaultButton="Cancel"
-                                    , cancelButton="Cancel"
-                                    , dismissString=sDismiss
+        sMsg = 'Save changes to :\n\n{0} {1}'.format(sSceneName, sConfirmEnd)
+        sConfirm = pm.confirmDialog(title="DO YOU WANT TO...",
+                                    message=sMsg,
+                                    button=buttonList,
+                                    defaultButton="Cancel",
+                                    cancelButton="Cancel",
+                                    dismissString=sDismiss,
+                                    icon="question",
                                     )
     else:
         sConfirm = "Save"
@@ -218,7 +237,7 @@ def saveScene(**kwargs):
 
         bNoFileCheck = kwargs.pop("noFileCheck", True)
 
-        if sCurScnPath == "untitled":
+        if (not sCurScnPath) or sCurScnPath == "untitled":
 
             sFileList = chooseMayaScene(ff=sSceneTypeList)
             if not sFileList:
@@ -233,7 +252,10 @@ def saveScene(**kwargs):
             if bNoFileCheck:
                 pmu.putEnv("DAVOS_FILE_CHECK", "")
 
-            return pm.saveFile(force=bForce, type=sSceneType)
+            if sSceneType:
+                return pm.saveFile(force=True, type=sSceneType)
+            else:
+                return pm.saveFile(force=True)
 
 def newScene(**kwargs):
 
