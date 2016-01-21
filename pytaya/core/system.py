@@ -159,9 +159,6 @@ def assertCurrentSceneReadWithoutDataLoss(prompt=True):
 
 def saveScene(**kwargs):
 
-    if kwargs.get("checkError", True):
-        assertCurrentSceneReadWithoutDataLoss()
-
     sSceneType = ""
 
     sCurScnPath = pm.sceneName()
@@ -251,6 +248,12 @@ def saveScene(**kwargs):
         else:
             if bNoFileCheck:
                 pmu.putEnv("DAVOS_FILE_CHECK", "")
+
+            if kwargs.get("checkError", True):
+                try:
+                    assertCurrentSceneReadWithoutDataLoss()
+                except AssertionError:
+                    return ""
 
             if sSceneType:
                 return pm.saveFile(force=True, type=sSceneType)
