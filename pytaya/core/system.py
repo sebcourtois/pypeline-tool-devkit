@@ -140,31 +140,31 @@ def chooseMayaScene(**kwargs):
                           selectFileFilter=sSelFilter,
                           **kwargs)
 
-def currentScene(checkOpeningError=False):
+def assertCurrentSceneReadWithoutDataLoss(prompt=True):
 
-    sCurScnPath = pm.sceneName()
-    if not checkOpeningError:
-        return sCurScnPath
+    if mc.file(q=True, errorStatus=True) > 0:
 
-    if sCurScnPath and (not mc.file(q=True, sceneName=True)):
-        sMsg = "Maya found ERRORS reading the current file !"
-        sConfirm = pm.confirmDialog(title='WARNING !',
-                                    message=sMsg,
-                                    button=['Continue', 'Abort'],
-                                    defaultButton='Abort',
-                                    cancelButton='Abort',
-                                    dismissString='Abort',
-                                    icon="warning")
+        sConfirm = 'Abort'
+        sMsg = "ERRORS have occurred while reading this scene \n\nthat may result in DATA LOSS !"
+        if prompt:
+            sConfirm = pm.confirmDialog(title='WARNING !',
+                                        message=sMsg,
+                                        button=['Continue', 'Abort'],
+                                        defaultButton='Abort',
+                                        cancelButton='Abort',
+                                        dismissString='Abort',
+                                        icon="warning")
         if sConfirm == 'Abort':
-            raise RuntimeError(sMsg)
-
-    return sCurScnPath
+            raise AssertionError(sMsg.replace('\n', ''))
 
 def saveScene(**kwargs):
 
+    if kwargs.get("checkError", True):
+        assertCurrentSceneReadWithoutDataLoss()
+
     sSceneType = ""
 
-    sCurScnPath = currentScene(checkOpeningError=kwargs.pop("checkOpeningError", True))
+    sCurScnPath = pm.sceneName()
     if not sCurScnPath:
         sCurScnPath = "untitled"
         sSceneName = "untitled scene"
