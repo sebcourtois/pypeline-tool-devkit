@@ -12,6 +12,7 @@ from pytd.util.logutils import logMsg
 from pytd.util.fsutils import pathResolve
 from pytd.util.sysutils import listForNone, argToTuple, toStr
 from pytd.util.strutils import upperFirst
+from pytaya.core.general import iterFileAttrs
 
 try:
     pm.mel.source("exportAnimSharedOptions")
@@ -476,5 +477,18 @@ def importAtomFile(sFilePath, **kwargs):
 
     return res
 
+def iterNodeAttrFiles(**kwargs):
 
+    bResolved = kwargs.pop("resolved", True)
 
+    for sNodeAttr in iterFileAttrs(**kwargs):
+
+        try:
+            p = mc.getAttr(sNodeAttr)
+        except Exception as e:
+            sErr = unicode(e)
+            print ("{}: {}".format(sNodeAttr, sErr) if sNodeAttr not in sErr else sErr).strip()
+            continue
+
+        if p:
+            yield pathResolve(p) if bResolved else p, sNodeAttr

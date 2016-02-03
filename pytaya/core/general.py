@@ -7,6 +7,22 @@ import maya.cmds
 mc = maya.cmds
 
 
+def iterFileAttrs(*args, **kwargs):
+
+    kwargs.update(nodeNames=True, ni=True,
+                  not_defaultNodes=True,
+                  not_references=True,)
+
+    sNodeList = lsNodes(*args, **kwargs)
+
+    for sNode in sNodeList:
+        for sAttr in listForNone(mc.listAttr(sNode, usedAsFilename=True)):
+            sAttr = sAttr.split(".", 1)[0]
+            sNodeAttr = sNode + "." + sAttr
+            sType = mc.getAttr(sNodeAttr, type=True)
+            if sType == "string":
+                yield sNodeAttr
+
 def lsNodes(*args, **kwargs):
 
     bAsNodeName = kwargs.pop('nodeNames', False)
