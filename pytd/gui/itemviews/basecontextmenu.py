@@ -8,7 +8,7 @@ SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
 from pytd.gui.itemviews.utils import createAction
 from pytd.gui.dialogs import confirmDialog
 
-from pytd.util.sysutils import toStr, inDevMode
+from pytd.util.sysutils import toStr, inDevMode, hostApp
 from pytd.util.logutils import logMsg
 
 class BaseContextMenu(QtGui.QMenu):
@@ -17,11 +17,13 @@ class BaseContextMenu(QtGui.QMenu):
         super(BaseContextMenu, self).__init__(parentView)
 
         self.view = parentView
-        self.actionSelection = []
-        self.actionSelectionLoaded = False
+        self.actionTargets = []
+        self.actionTargetsLoaded = False
 
         self.createActions()
         self.buildSubmenus()
+
+        self.installEventFilter(parentView)
 
     def model(self):
 
@@ -31,7 +33,7 @@ class BaseContextMenu(QtGui.QMenu):
 
         return model
 
-    def getActionSelection(self):
+    def getActionTargets(self):
 
         view = self.view
         model = view.model()
@@ -64,30 +66,36 @@ class BaseContextMenu(QtGui.QMenu):
         itemFromIndex = model.itemFromIndex
         return [itemFromIndex(idx) for idx in selIndexes]
 
-    def loadActionSelection(self):
+    def loadActionTargets(self):
 
-        self.actionSelection = self.getActionSelection()
-        self.actionSelectionLoaded = True
+        self.actionTargets = self.getActionTargets()
+        self.actionTargetsLoaded = True
 
-    def assertActionSelection(self):
+    def assertActionTargets(self):
 
-        if not self.actionSelectionLoaded:
+        if not self.actionTargetsLoaded:
             raise RuntimeError("Action Selection not loaded.")
         else:
-            self.actionSelectionLoaded = False
+            self.actionTargetsLoaded = False
 
     def launchAction(self, actionDct, checked):
 
-        self.assertActionSelection()
+        bCheckable = actionDct.get("checkable", False)
 
-        sActionMsg = u"Action: {} > {}".format(actionDct["menu"], actionDct["label"])
-        try:
-            logMsg(u'# Action: {} #'.format(sActionMsg))
-        except Exception, e:
-            logMsg(e, warning=True)
+        if not bCheckable:
+            self.assertActionTargets()
 
-        args = actionDct.get("args", []) + self.actionSelection
+        if not bCheckable:
+            sActionMsg = u"Action: {} > {}".format(actionDct["menu"], actionDct["label"])
+            try:
+                logMsg(u'# Action: {} #'.format(sActionMsg))
+            except Exception, e:
+                logMsg(e, warning=True)
+
+        args = actionDct.get("args", []) + self.actionTargets
         kwargs = actionDct.get("kwargs", {})
+        if bCheckable:
+            kwargs.update(checked=checked)
         func = actionDct["fnc"]
 
         try:
@@ -122,8 +130,10 @@ class BaseContextMenu(QtGui.QMenu):
             if sAction == "separator":
                 qAction = None
             else:
+                bCheckable = actionDct.get("checkable", False)
                 actionSlot = functools.partial(self.launchAction, actionDct)
-                qAction = createAction(sAction, self, slot=actionSlot)
+                qAction = createAction(sAction, self, slot=actionSlot,
+                                       checkable=bCheckable)
 
                 self.createdActions.append(qAction)
 
@@ -157,11 +167,16 @@ class BaseContextMenu(QtGui.QMenu):
 
         cls = prptyItem._metaobj.__class__
         sMroList = tuple(c.__name__ for c in insp.getmro(cls))
+        sCurApp = hostApp()
 
         for actionDct in self.createdActionConfigs:
 
             qAction = actionDct["action"]
             if qAction is None:
+                continue
+
+            sAppList = actionDct.get("apps")
+            if sAppList and (sCurApp not in sAppList):
                 continue
 
             fnc = actionDct["fnc"]
@@ -176,11 +191,11 @@ class BaseContextMenu(QtGui.QMenu):
 
     def updateVisibilities(self):
 
-        if not self.actionSelection:
+        if not self.actionTargets:
             return
 
         allowedActions = set(self.createdActions)
-        for prptyItem in self.actionSelection:
+        for prptyItem in self.actionTargets:
             allowedActions.intersection_update(self.iterAllowedActions(prptyItem))
 
         if not allowedActions:
@@ -192,10 +207,25 @@ class BaseContextMenu(QtGui.QMenu):
         for qMenu in self.findChildren(QtGui.QMenu):
             qMenu.menuAction().setVisible(not qMenu.isEmpty())
 
+    def updateActionsState(self):
+
+        for actionDct in self.createdActionConfigs:
+
+            updFnc = actionDct.get("upd")
+            if not updFnc:
+                continue
+
+            action = actionDct["action"]
+            if not action.isVisible():
+                continue
+
+            updFnc(action, *self.actionTargets)
+
     def launch(self, event):
 
-        self.loadActionSelection()
+        self.loadActionTargets()
         self.updateVisibilities()
+        self.updateActionsState()
         self.exec_(event.globalPos())
 
     def refreshItems(self, *itemList, **kwargs):

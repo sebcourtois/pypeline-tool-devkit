@@ -3,7 +3,8 @@ import functools
 
 from PySide import QtGui
 from PySide import QtCore
-from PySide.QtCore import Qt
+from PySide.QtCore import Qt, QEvent
+
 
 from .utils import ItemUserFlag
 from .baseproxymodel import BaseProxyModel
@@ -100,8 +101,8 @@ class BaseTreeView(QtGui.QTreeView):
                                                 QtCore.QPoint(0, 0),
                                                 Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
 
-                QtGui.qApp.sendEvent(editor, pressEvent)
-                QtGui.qApp.sendEvent(editor, releaseEvent)
+                QtGui.QApplication.sendEvent(editor, pressEvent)
+                QtGui.QApplication.sendEvent(editor, releaseEvent)
 
         return result
 
@@ -127,6 +128,18 @@ class BaseTreeView(QtGui.QTreeView):
 
                 if index.flags() & ItemUserFlag.MultiEditable:
                     model.setData(index, variant)
+
+    def eventFilter(self, obj, event):
+
+        if isinstance(obj, QtGui.QMenu):
+            eventType = event.type()
+            if eventType in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
+                action = obj.activeAction()
+                if action and action.isCheckable():
+                    action.trigger()
+                    return True
+
+        return super(BaseTreeView, self).eventFilter(obj, event)
 
     def mousePressEvent(self, mouseEvent):
 

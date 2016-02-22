@@ -96,9 +96,6 @@ class BaseTreeWidget(QtGui.QWidget):
         self.dataView.mainCtxMenu = self.__class__.contextMenuClass(self.dataView)
         if self.treeView:
             self.treeView.mainCtxMenu = self.__class__.contextMenuClass(self.treeView)
-#            self.connect(self.dataView.model(), SIGNAL("leafAdded(QModelIndex)"), self.treeView.expand)
-#        else:
-#            self.connect(self.dataView.model(), SIGNAL("leafAdded(QModelIndex)"), self.dataView.expand)
 
         return
 
@@ -117,8 +114,6 @@ class BaseTreeWidget(QtGui.QWidget):
             for i in range(1, self.dataView.model().columnCount()):
                 self.treeView.setColumnHidden(i, True)
 
-            #self.dataView.header().setResizeMode(0, QtGui.QHeaderView.Fixed)
-            #self.treeView.header().setResizeMode(0, QtGui.QHeaderView.Fixed)
 
     def model(self):
         return self.treeView.model()
@@ -151,7 +146,6 @@ class BaseTreeWidget(QtGui.QWidget):
         self.dataView.keyReleaseEvent(keyEvent)
         if self.treeView:
             self.treeView.keyReleaseEvent(keyEvent)
-
 
     def expandAll(self):
         self.dataView.expandAll()
