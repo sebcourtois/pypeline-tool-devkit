@@ -53,7 +53,7 @@ def toDisplayText(value, sep=", "):
             return ""
 
     elif isinstance(value, MemSize):
-        return "{0:.0cM}".format(value)
+        return "{0:.1cM}".format(value)
 
     elif isinstance(value, basestring):
         return toUnicode(value)

@@ -36,7 +36,7 @@ class MemSize(long):
         mult = ["", "K", "M", "G", "T", "P"]
 
         val = float(self) * factor
-        i = 0 if val < 1 else int(math.log(val, base)) + 1
+        i = 0 if val < 1 else int(math.log(val, base))# + 1
         v = val / math.pow(base, i)
         v, i = (v, i) if v > 0.5 else (v * base, i - 1)
 
