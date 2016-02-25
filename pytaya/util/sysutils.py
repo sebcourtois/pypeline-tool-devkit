@@ -3,8 +3,35 @@ import os
 import sys
 
 import maya.cmds as mc
+import pymel.core as pm
 
 from pytd.util.fsutils import pathJoin
+
+
+def listForNone(arg):
+    return [] if arg is None else arg
+
+def PyNone(arg):
+    if arg:
+        if isinstance(arg, basestring):
+            return pm.PyNode(arg)
+    return arg
+
+def argsToPyNode(*argList):
+
+    newArgList = []
+    #print argList
+    for arg in argList:
+        if isinstance(arg, (tuple, list)):
+            newAList = map(PyNone, listForNone(arg))
+            newArgList.append(newAList)
+        else:
+            newArgList.append(PyNone(arg))
+    #print newArgList
+    if len(newArgList) > 1:
+        return newArgList
+    else:
+        return newArgList[0]
 
 def currentMayapy():
 
