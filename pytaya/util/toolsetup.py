@@ -85,22 +85,22 @@ class ToolSetup(object):
         self.afterReloading()
 
     def onPostSceneRead(self, *args):
-        logMsg("Post Scene Read", log="debug")
+        logMsg("Post Scene Read", log="callback")
 
     def onNewSceneOpened(self, *args):
-        logMsg("New Scene Opened", log="debug")
+        logMsg("New Scene Opened", log="callback")
 
     def onSceneOpened(self, *args):
-        logMsg("Scene Opened", log="debug")
+        logMsg("Scene Opened", log="callback")
 
     def onPreFileNewOrOpened(self, *args):
-        logMsg("Pre File New Or Opened", log="debug")
+        logMsg("Pre File New Or Opened", log="callback")
 
     def onQuitApplication(self):
-        logMsg("Quit Application", log="debug")
+        logMsg("Quit Application", log="callback")
 
     def onSceneSaved(self):
-        logMsg("Scene Saved", log="debug")
+        logMsg("Scene Saved", log="callback")
 
     def startScriptJobs(self):
 
