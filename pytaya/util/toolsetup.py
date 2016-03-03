@@ -216,8 +216,8 @@ class ToolSetup(object):
                                 radioButton=(logutils.logSeverity == 3),
                                 c=partial(self.setLogLevel, 3))
 
-                pm.menuItem(divider=True)
-                pm.menuItem(label="Reload Tools", c=self.reload)
+            pm.menuItem(divider=True)
+            pm.menuItem(label="Reload Tools", c=self.reload)
 
     def buildMenu(self):
 
