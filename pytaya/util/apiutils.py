@@ -43,9 +43,16 @@ def toMDagPath(*sNameList):
 
     return dagPathList
 
-def getObject(sName):
-    mObjList = toMObject(sName)
-    return mObjList[0] if mObjList else None
+def getNode(sNodeName, fail=True):
+
+    nodeList = toMObject(sNodeName)
+    if not nodeList:
+        if fail:
+            raise pm.MayaNodeError(sNodeName)
+        else:
+            return None
+
+    return nodeList[0]
 
 def getDagPath(sName):
     dagPathList = toMDagPath(sName)

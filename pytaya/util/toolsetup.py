@@ -1,4 +1,5 @@
 
+import sys
 from functools import partial
 
 import pymel.core
@@ -235,3 +236,6 @@ class ToolSetup(object):
     def install(self):
 
         self.buildMenu()
+
+        m = sys.modules["__main__"]
+        m.TOOL_SETUP = self

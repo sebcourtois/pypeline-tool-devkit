@@ -1,13 +1,18 @@
 
-import pymel.core
+
+import maya.api.OpenMaya as om
+
+import maya.cmds as mc
+import pymel.core as pm
+
 from pytd.util.sysutils import argToTuple
-pm = pymel.core
+from pytd.util.logutils import logMsg
 
-import maya.cmds
-mc = maya.cmds
+from pytaya.util.sysutils import listForNone, pynodeToStr, argToStr
+from pytaya.util import apiutils as api
 
 
-def iterFileAttrs(*args, **kwargs):
+def iterAttrsUsedAsFilename(*args, **kwargs):
 
     kwargs.update(nodeNames=True, ni=True,
                   not_defaultNodes=True,
@@ -76,25 +81,76 @@ def pruneNodeList(in_nodeList, **kwargs):
 
     return seqType(nodeList)
 
-def listForNone(arg):
-    return [] if arg is None else arg
+def getAddAttrCmd(sNodeAttr, longName=True):
 
-def argToStr(arg, bNodeName=True):
+    sNode, sAttr = sNodeAttr.split(".")
 
-    if isinstance(arg, str):
-        return arg
-    elif arg is None:
-        return ""
-    elif isinstance(arg, pm.PyNode):
-        return arg.nodeName() if bNodeName else arg.name()
-    elif isinstance(arg, pm.Attribute):
-        return arg.name()
-    else:
-        return str(arg)
+    node = api.getNode(sNode)
+    fnNode = om.MFnDependencyNode(node)
+    mAttr = om.MFnAttribute(fnNode.attribute(sAttr))
+    return mAttr.getAddAttrCmd(longName)
 
-def pynodeToStr(arg):
+def getObject(sName, fail=False):
+    if not mc.objExists(sName):
+        if fail:
+            raise pm.MayaObjectError(sName)
+        return None
+    return sName
 
-    if isinstance(arg, (tuple, list, set)):
-        return tuple(argToStr(a, False) for a in arg)
-    else:
-        return argToStr(arg)
+def copyAttrs(srcNode, destNode, *sAttrList, **kwargs):
+    logMsg(log='all')
+
+    if "values" not in kwargs:
+        kwargs["values"] = True
+
+    bDelete = kwargs.pop("delete", False)
+    bCreate = kwargs.pop("create", False)
+
+    sSrcNode = argToStr(srcNode)
+    sDestNode = argToStr(destNode)
+
+    mObj = api.getNode(sSrcNode)
+    fnNode = om.MFnDependencyNode(mObj)
+
+    sCopyAttrList = []
+    for sAttr in sAttrList:
+        if not getObject(sDestNode + "." + sAttr):
+            if bCreate:
+                mAttr = om.MFnAttribute(fnNode.attribute(sAttr))
+                sAddAttrCmd = mAttr.getAddAttrCmd(False).replace(";", " {};".format(sDestNode))
+
+                logMsg("Copy attr. '{}' from '{}' to '{}'."
+                       .format(sAttr, sSrcNode, sDestNode), log="info")
+                pm.mel.eval(sAddAttrCmd)
+            else:
+                sAttr = ""
+        else:
+            if bCreate:
+                logMsg("Attr. '{}' already exists on '{}'.".format(sAttr, sDestNode), log="info")
+
+        if sAttr:
+            sCopyAttrList.append(sAttr)
+
+    mc.copyAttr(sSrcNode, sDestNode, attribute=sCopyAttrList, **kwargs)
+    #copyAttrState(sSrcNode, sDestNode , *sCopyAttrList)
+
+    if bDelete:
+        for sAttr in sCopyAttrList:
+            mc.deleteAttr(sSrcNode + "." + sAttr)
+
+    return sCopyAttrList
+
+def copyAttrState(srcNode, destNode , *sAttrList):
+    logMsg(log='all')
+
+    sSrcNode = argToStr(srcNode)
+    sDestNode = argToStr(destNode)
+
+    for sAttr in sAttrList:
+        sDestNodeAttr = getObject(sDestNode + "." + sAttr)
+        if sDestNodeAttr:
+            sSrcNodeAttr = sSrcNode + "." + sAttr
+            mc.setAttr(sDestNodeAttr,
+                       k=mc.getAttr(sSrcNodeAttr, k=True),
+                       l=mc.getAttr(sSrcNodeAttr, l=True),
+                       cb=mc.getAttr(sSrcNodeAttr, cb=True))

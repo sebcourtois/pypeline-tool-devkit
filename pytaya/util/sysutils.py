@@ -33,6 +33,26 @@ def argsToPyNode(*argList):
     else:
         return newArgList[0]
 
+def argToStr(arg, bNodeName=True):
+
+    if isinstance(arg, str):
+        return arg
+    elif arg is None:
+        return ""
+    elif isinstance(arg, pm.PyNode):
+        return arg.nodeName() if bNodeName else arg.name()
+    elif isinstance(arg, pm.Attribute):
+        return arg.name()
+    else:
+        return str(arg)
+
+def pynodeToStr(arg):
+
+    if isinstance(arg, (tuple, list, set)):
+        return tuple(argToStr(a, False) for a in arg)
+    else:
+        return argToStr(arg)
+
 def currentMayapy():
 
     if sys.platform == "win32":

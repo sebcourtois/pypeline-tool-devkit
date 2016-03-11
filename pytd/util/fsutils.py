@@ -99,13 +99,18 @@ def pathSplitDirs(p):
 
     if p.startswith("//"):
         root, p = osp.splitunc(p)
+    elif p.startswith("/"):
+        dirs = p.split("/", 2)
+        root, p = (dirs[1], "") if len(dirs) == 2 else dirs[1:]
+        root = "/" + root
     else:
         root, p = osp.splitdrive(p)
 
     p = p.strip("/")
 
     res = [root + "/"] if root else []
-    res.extend(p.split("/"))
+    if p:
+        res.extend(p.split("/"))
 
     return res
 

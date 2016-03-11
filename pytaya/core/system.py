@@ -12,7 +12,7 @@ from pytd.util.logutils import logMsg
 from pytd.util.fsutils import pathResolve
 from pytd.util.sysutils import listForNone, argToTuple, toStr
 from pytd.util.strutils import upperFirst
-from pytaya.core.general import iterFileAttrs
+from pytaya.core.general import iterAttrsUsedAsFilename
 
 try:
     pm.mel.source("exportAnimSharedOptions")
@@ -481,7 +481,7 @@ def iterNodeAttrFiles(**kwargs):
 
     bResolved = kwargs.pop("resolved", True)
 
-    for sNodeAttr in iterFileAttrs(**kwargs):
+    for sNodeAttr in iterAttrsUsedAsFilename(**kwargs):
 
         try:
             p = mc.getAttr(sNodeAttr)
