@@ -54,57 +54,58 @@ def processSelectedReferences(func):
         bUnload = kwargs.pop("unloadBefore", False)
         bAllIfNoSel = kwargs.pop("allIfNoSelection", False)
         sProcessLabel = kwargs.pop("processLabel", "Process")
-        bSelected = kwargs.pop("selected", kwargs.pop("sl", True))
+        bSelMode = kwargs.pop("selected", kwargs.pop("sl", True))
         bConfirm = kwargs.pop("confirm", True)
 
-        if bAllIfNoSel and bSelected:
+        bSelected = bSelMode
+        if bSelMode and bAllIfNoSel:
             if not mc.ls(sl=True):
                 bSelected = False
 
-        oRefList = listReferences(sl=bSelected, **kwargs)
+        oFileRefList = listReferences(sl=bSelected, **kwargs)
 
-        if not oRefList:
+        if not oFileRefList:
             if bSelected:
-                pm.displayWarning("No referenced objects selected !")
+                pm.displayError("No referenced objects selected !")
             else:
-                pm.displayWarning("No referenced objects to {0} !!".format(sProcessLabel.lower()))
-
+                pm.displayError("No referenced objects to {} !".format(sProcessLabel.lower()))
             return [], []
 
-        if bSelected:
-            sConfirmText = sProcessLabel + " {} Selected References ?".format(len(oRefList))
-            sRefNames = '  '.join(oRef.namespace for oRef in oRefList)
-        else:
-            sConfirmText = sProcessLabel + " All References ?"
-            sRefNames = ""
+        if bSelMode:
+            if bSelected:
+                sConfirmText = sProcessLabel + " {} Selected References ?".format(len(oFileRefList))
+                sRefNames = '  '.join(oFileRef.namespace for oFileRef in oFileRefList)
+            else:
+                sConfirmText = sProcessLabel + " All References ?"
+                sRefNames = ""
 
-        if bConfirm:
-            sConfirmMsg = (sConfirmText + '\n\n' + sRefNames) if sRefNames else sConfirmText
+            if bConfirm:
+                sConfirmMsg = (sConfirmText + '\n\n' + sRefNames) if sRefNames else sConfirmText
 
-            sConfirm = pm.confirmDialog(title='WARNING !'
-                                        , message=sConfirmMsg
-                                        , button=['OK', 'Cancel'])
+                sConfirm = pm.confirmDialog(title='WARNING !'
+                                            , message=sConfirmMsg
+                                            , button=['OK', 'Cancel'])
 
-            if sConfirm == 'Cancel':
-                logMsg("Cancelled !" , warning=True)
-                return [], []
+                if sConfirm == 'Cancel':
+                    logMsg("Cancelled !" , warning=True)
+                    return [], []
 
         if bUnload:
-            for oRef in oRefList:
-                oRef.unload()
+            for oFileRef in oFileRefList:
+                oFileRef.unload()
 
         try:
             resultList = []
             kwargs.update(processResults=resultList)
-            for oRef in oRefList:
-                func(oRef, *args, **kwargs)
+            for oFileRef in oFileRefList:
+                func(oFileRef, *args, **kwargs)
         finally:
             if bUnload:
-                for oRef in oRefList:
+                for oFileRef in oFileRefList:
                     try:
-                        oRef.load()
+                        oFileRef.load()
                     except Exception, e:
                         pm.displayError(e)
 
-        return oRefList, resultList
+        return oFileRefList, resultList
     return doIt
