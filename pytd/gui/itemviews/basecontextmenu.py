@@ -100,10 +100,10 @@ class BaseContextMenu(QtGui.QMenu):
 
         try:
             return func(*args, **kwargs)
-        except Exception, err:
+        except Exception as err:
             sMsg = u"{}\n\n".format(sActionMsg)
             confirmDialog(title='SORRY !'
-                        , message=toStr(sMsg) + toStr(err)
+                        , message=(toStr(sMsg) + toStr(err))
                         , button=["OK"]
                         , defaultButton="OK"
                         , cancelButton="OK"
