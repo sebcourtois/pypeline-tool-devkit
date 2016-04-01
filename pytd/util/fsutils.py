@@ -143,7 +143,7 @@ def iterPaths(sRootDirPath, **kwargs):
     ignoreDirsFunc = kwargs.get("ignoreDirs", None)
     ignoreFilesFunc = kwargs.get("ignoreFiles", None)
 
-    keepFilesFunc = kwargs.get("keepFiles", None)
+    onlyFilesFunc = kwargs.get("onlyFiles", None)
 
     for sDirPath, sDirNames, sFileNames in os.walk(sRootDirPath):
 
@@ -157,10 +157,10 @@ def iterPaths(sRootDirPath, **kwargs):
                 except ValueError: pass
 
         bOnly = False
-        sKeepFiles = []
-        if keepFilesFunc is not None:
-            sKeepFiles = keepFilesFunc(sDirPath, sFileNames)
-            #print "sKeepFiles", sKeepFiles, sFileNames
+        sOnlyFiles = []
+        if onlyFilesFunc is not None:
+            sOnlyFiles = onlyFilesFunc(sDirPath, sFileNames)
+            #print "sOnlyFiles", sOnlyFiles, sFileNames
             bOnly = True
 
         sIgnoredFiles = []
@@ -172,7 +172,7 @@ def iterPaths(sRootDirPath, **kwargs):
 
         for sFileName in sFileNames:
 
-            if bOnly and (sFileName not in sKeepFiles):
+            if bOnly and (sFileName not in sOnlyFiles):
                 if bEmptyDirs:
                     sKeptFileNames.remove(sFileName)
                 continue
