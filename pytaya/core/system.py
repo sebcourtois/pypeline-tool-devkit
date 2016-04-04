@@ -42,7 +42,7 @@ def importFile(sFilePath, **kwargs):
     bViewFit = kwargs.pop('viewFit', False)
     bOutNewNodes = kwargs.pop('returnNewNodes', kwargs.pop('rnn', True))
     bPreserveRefs = kwargs.pop('preserveReferences', kwargs.pop('pr', True))
-    bNewScene = kwargs.pop('newScene', kwargs.pop('nsc', "NoEntry"))
+    bNewScene = kwargs.pop('newScene', kwargs.pop('nsc', False))
 
     if bReference:
         bUseNamespaces = True
