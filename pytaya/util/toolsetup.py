@@ -1,13 +1,13 @@
 
 import sys
 from functools import partial
+import logging
 
-import pymel.core
-pm = pymel.core
+import pymel.core; pm = pymel.core
 
 from pytd.util import logutils
 from pytd.util import sysutils
-from pytd.util.sysutils import hostApp, reloadModule
+from pytd.util.sysutils import hostApp, reloadModule, toStr
 from pytd.util.logutils import logMsg
 
 
@@ -39,6 +39,11 @@ def reloadUI(sUiModuleName, bRelaunchUI, **kwargs):
         else:
             pm.evalDeferred((sReloadCmd + '{0}.launch()').format(sUiModuleName))
 
+def setUrllib3LoggingEnabled(bEnabled):
+
+    logger = logging.getLogger("requests.packages.urllib3.connectionpool")
+    if logger:
+        logger.disabled = not bEnabled
 
 class ToolSetup(object):
 
@@ -174,6 +179,24 @@ class ToolSetup(object):
 
         self.startScriptJobs()
 
+        import logging
+
+        sMuteModList = ["requests.packages.urllib3.connectionpool",
+                        "pytd.util.external.parse",
+                        "PIL.Image", ]
+
+        for sModule in sMuteModList:
+
+            if not sModule:
+                continue
+
+            try:
+                logger = logging.getLogger(sModule)
+                if logger:
+                    logger.disabled = True
+            except Exception as e:
+                pm.displayWarning(toStr(e))
+
     def beginMenu(self):
 
         cls = self.__class__
@@ -216,6 +239,9 @@ class ToolSetup(object):
                     pm.menuItem(label='All',
                                 radioButton=(logutils.logSeverity == 3),
                                 c=partial(self.setLogLevel, 3))
+
+
+                pm.menuItem(label="Urllib3 Logging", c=setUrllib3LoggingEnabled, cb=False)
 
             pm.menuItem(divider=True)
             pm.menuItem(label="Reload Tools", c=self.reload)

@@ -5,7 +5,7 @@ import sys
 import time
 import calendar
 from collections import Iterable
-#import copy
+import itertools
 import inspect
 import subprocess
 from functools import partial
@@ -155,6 +155,11 @@ def chunkate(iterable, chunkSize):
             stop = ((i + 1) * chunkSize)
         #print start, stop
         yield islice(iterable, start, stop)
+
+def grouper(n, iterable, fillvalue=None):
+    "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return itertools.izip_longest(fillvalue=fillvalue, *args)
 
 ''
 #===============================================================================

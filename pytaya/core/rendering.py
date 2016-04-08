@@ -1,13 +1,11 @@
 
 
-import maya.cmds
-mc = maya.cmds
-
-import pymel.core
-pm = pymel.core
+import maya.cmds;mc = maya.cmds
+import pymel.core;pm = pymel.core
 
 from pytaya.core.general import listForNone
 from pytd.util.logutils import logMsg
+from pytd.util.sysutils import grouper
 
 
 def fileNodesFromObjects(oObjList):
@@ -267,3 +265,65 @@ def transferUvAndShaders(oSrcGrp, oDestGrp):
 #            pm.warning("The selected node's may have potentially problems on transferring uvs and materials.")
 
     return notFoundList, notCompatibleShapeList
+
+
+def averageVertexColorsToMaterial(oMatList="NoEntry"):
+
+    if oMatList == "NoEntry":
+        oMatList = pm.selected()
+
+    if not oMatList:
+        logMsg("Nothing is selected. Select meshes to apply vertex color." , warning=True)
+        return
+
+    for oMat in oMatList:
+
+        logMsg("Processing {0}".format(repr(oMat)))
+
+        try:
+            colorAttr = oMat.attr("color")
+        except pm.MayaAttributeError:
+            logMsg("\tNo color attribute found.")
+            continue
+
+        try:
+            oSG = oMat.shadingGroups()[0]
+        except IndexError:
+            print "\tNo ShadingGroup found."
+            continue
+
+        oMemberList = oSG.members()
+        if not oMemberList:
+            logMsg("\tShadingGroup is empty.")
+            continue
+
+        pm.select(oMemberList, r=True)
+        pm.mel.ConvertSelectionToVertices()
+        sSelectedVerts = mc.ls(sl=True)
+        pm.refresh()
+
+        try:
+            vtxColorList = tuple(grouper(3, mc.polyColorPerVertex(sSelectedVerts, q=True, rgb=True)))
+        except:
+            logMsg("\tNo vertex colors found.")
+            continue
+
+        numVtx = len(vtxColorList)
+        rSum = 0.0
+        gSum = 0.0
+        bSum = 0.0
+        for r, g, b in vtxColorList:
+            rSum += r
+            gSum += g
+            bSum += b
+
+        if rSum + gSum + bSum > 0.0:
+
+            avrVtxColor = (rSum / numVtx, gSum / numVtx, bSum / numVtx)
+
+            try:
+                colorAttr.disconnect()
+                colorAttr.set(avrVtxColor)
+            except Exception, e:
+                logMsg("\t{0}".format(e))
+
