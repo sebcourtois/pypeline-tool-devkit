@@ -1,5 +1,4 @@
 
-
 import maya.cmds;mc = maya.cmds
 import pymel.core;pm = pymel.core
 
@@ -19,26 +18,32 @@ def fileNodesFromShaders(oMatList):
 
     return list(oFileNodeList)
 
-def shadersFromObjects(oObjList):
+def shadersFromObjects(objList, connectedTo=""):
 
-    if not oObjList:
+    sAttrName = connectedTo
+
+    if not objList:
         return []
 
-    oSGMatList = shadingGroupsFromObjects(oObjList)
+    oSGMatList = shadingGroupsFromObjects(objList)
 
     oMatList = []
     for oSGMat in oSGMatList:
-        oMatList.extend(pm.ls(listForNone(mc.listConnections(oSGMat.name(),
+        sName = oSGMat.attr(sAttrName).name() if connectedTo else oSGMat.name()
+        oMatList.extend(pm.ls(listForNone(mc.listConnections(sName,
                                                              source=True,
                                                              destination=False)),
                               type=mc.listNodeTypes('shader', ex="texture")))
     return oMatList
 
-def shadingGroupsFromObjects(oObjList):
+def shadingGroupsFromObjects(objList):
 
     oShdGrpList = set()
 
-    for oObj in oObjList:
+    for obj in objList:
+
+        oObj = obj if isinstance(obj, pm.PyNode) else pm.PyNode(obj)
+
         oShdGrpList.update(shadingGroupsForObject(oObj))
 
     return list(oShdGrpList)
@@ -327,3 +332,39 @@ def averageVertexColorsToMaterial(oMatList="NoEntry"):
             except Exception, e:
                 logMsg("\t{0}".format(e))
 
+def duplicateShadersPerObject(oMatList):
+
+    oNewMatList = []
+    for oMat in oMatList:
+
+        oShadEngList = oMat.outputs(type="shadingEngine")
+        if not oShadEngList:
+            continue
+
+        oShadEng = oShadEngList[0]
+
+        oShadEngMemberList = oShadEng.members()
+
+        oMemberByGeoObjDct = {}
+
+        for member in  oShadEngMemberList:
+            oMesh = member.node() if isinstance(member, pm.MeshFace) else member
+            oMemberByGeoObjDct.setdefault(oMesh, []).append(member)
+
+        count = len(oMemberByGeoObjDct)
+        if count <= 1:
+            continue
+
+        oMemberByGeoObjDct.popitem()
+
+        for oShadingMembers in oMemberByGeoObjDct.itervalues():
+            oNewMat = pm.duplicate(oMat, inputConnections=True)[0]
+#            pm.select(oShadingMembers, replace=True)
+#            pm.hyperShade(assign=oNewMat)
+            oSG = pm.sets(renderable=True, noSurfaceShader=True, empty=True, name=oNewMat.nodeName() + "SG")
+            oNewMat.attr("outColor") >> oSG.attr("surfaceShader")
+            pm.sets(oSG, forceElement=oShadingMembers)
+
+            oNewMatList.append(oNewMat)
+
+    return oNewMatList

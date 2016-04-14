@@ -8,24 +8,30 @@ from pytaya.util.sysutils import withSelectionRestored
 from pytaya.util import apiutils as myapi
 
 @withSelectionRestored
-def bakeDiffuseToVertexColor(in_objList="NoEntry", **kwargs):
+def bakeDiffuseToVertexColor(**kwargs):
 
-    bIgnoreRef = kwargs.pop("ignoreReference", True)
+    bOnRefs = kwargs.pop("onReferences", kwargs.pop("onRefs", False))
+    fAmbient = kwargs.pop("ambient", 1.0)
 
-    sMeshList = []
-    if in_objList == "NoEntry":
-        sMeshList = lsNodes(sl=True, dag=True, type="mesh", not_referencedNodes=bIgnoreRef, nodeNames=True)
-    elif in_objList:
-        sMeshList = lsNodes(in_objList, dag=True, type="mesh", not_referencedNodes=bIgnoreRef, nodeNames=True)
+    sCamShape = ""
+    if mc.about(batch=True):
+        sCamShape = kwargs["camera"]
 
-    if not sMeshList:
-        logMsg("No meshes found in selection !" , warning=True)
-        return False
+    if "meshes" not in kwargs:
+        sMeshList = lsNodes(sl=True, dag=True, ni=True, type="mesh",
+                            not_referencedNodes=not bOnRefs, nodeNames=True)
+        if not sMeshList:
+            logMsg("No meshes found in selection !" , warning=True)
+            return False
+    else:
+        sMeshList = kwargs.pop("meshes")
+        if not sMeshList:
+            return False
 
     mc.polyOptions(sMeshList, colorShadedDisplay=False)
 
     sLightList = tuple(sLight for sLight in mc.ls(type=mc.listNodeTypes('light'))
-                       if myapi.getDagPath(sLight).isVisible())
+                                    if myapi.getDagPath(sLight).isVisible())
     for sLight in sLightList:
         try:
             mc.setAttr(sLight + ".visibility", False)
@@ -33,7 +39,7 @@ def bakeDiffuseToVertexColor(in_objList="NoEntry", **kwargs):
             pm.displayWarning(e)
 
     ambLight = pm.shadingNode("ambientLight", asLight=True)
-    ambLight.setAttr("intensity", 1.0)
+    ambLight.setAttr("intensity", fAmbient)
     ambLight.setAmbientShade(0.0)
     ambLight.setAttr("color", (1.0, 1.0, 1.0))
     ambLight.setAttr("shadowColor", (0.0, 0.0, 0.0))
@@ -45,7 +51,7 @@ def bakeDiffuseToVertexColor(in_objList="NoEntry", **kwargs):
     ##as it could affects the "rendering/baking" aspect of the object.
     ##After bake, reapply the value.
     oReflDct = {}
-    for oMat in lsNodes(type=mc.listNodeTypes('shader', ex="texture"), not_referencedNodes=True):
+    for oMat in lsNodes(type=mc.listNodeTypes('shader', ex="texture"), not_referencedNodes=not bOnRefs):
         if oMat.hasAttr("reflectivity"):
             oInputs = oMat.attr("reflectivity").inputs(sourceFirst=True, c=True, plugs=True)
             if oInputs:
@@ -54,6 +60,10 @@ def bakeDiffuseToVertexColor(in_objList="NoEntry", **kwargs):
             else:
                 oReflDct[oMat] = oMat.getAttr("reflectivity")
             oMat.setAttr("reflectivity", 0)
+
+
+    if sCamShape:
+        sMeshList.append(sCamShape)
 
     try:
         mc.polyGeoSampler(sMeshList,
@@ -86,21 +96,26 @@ def bakeDiffuseToVertexColor(in_objList="NoEntry", **kwargs):
             else:
                 oMat.setAttr("reflectivity", oValues)
 
-        pm.delete(ambLight)
+        if ambLight:
+            pm.delete(ambLight)
 
     return True
 
-def disableVertexColorDisplay(in_sSelList=None, **kwargs):
+def disableVertexColorDisplay(**kwargs):
 
-    bWarn = kwargs.pop("warning", True)
+    bOnRefs = kwargs.pop("onReferences", kwargs.pop("onRefs", True))
 
-    if in_sSelList is None:
-        sSelList = mc.ls(sl=True, dag=True, o=True)
+    if "meshes" not in kwargs:
+        sMeshList = lsNodes(sl=True, dag=True, ni=True, type="mesh",
+                            not_referencedNodes=not bOnRefs, nodeNames=True)
+        if not sMeshList:
+            logMsg("No meshes found in selection !" , warning=True)
+            return False
+    else:
+        sMeshList = kwargs.pop("meshes")
+        if not sMeshList:
+            return False
 
-    if bWarn and not sSelList:
-        logMsg("Nothing is selected. Select meshes to remove vertex color." , warning=True)
-        return
+    pm.polyOptions(sMeshList, colorShadedDisplay=False)
 
-    sMeshList = pm.ls(sSelList, type="mesh", ni=True)
-    if sMeshList:
-        pm.polyOptions(sMeshList, colorShadedDisplay=False)
+    return True
