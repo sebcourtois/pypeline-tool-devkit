@@ -395,7 +395,7 @@ def jsonRead(sFile):
         pyobj = json.load(fp, encoding='utf-8')
     return pyobj
 
-def sha1HashFile(sFilePath, chunk_size=1024 * 8):
+def sha1HashFile(sFilePath, chunk_size=16 * 1024):
 
     with open(sFilePath, "rb") as fp:
 
