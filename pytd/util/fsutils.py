@@ -221,7 +221,7 @@ def copyFile(sSrcPath, sDestPath, **kwargs):
         sDestPath = pathJoin(sDestPath, osp.basename(sSrcPath))
 
     if sameFile(sSrcPath, sDestPath):
-        sMsg = u"Source and destination are the same file:"
+        sMsg = u"Source and destination files are the same:"
         sMsg += u"\n    source:      ", sSrcPath
         sMsg += u"\n    destination: ", sDestPath
         raise EnvironmentError(sMsg)
