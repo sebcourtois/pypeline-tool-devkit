@@ -387,12 +387,18 @@ def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
     return sCopiedFileList
 
 def jsonWrite(sFile, pyobj, **kwargs):
+
     with open(sFile, mode='wb') as fp:
         json.dump(pyobj, fp, indent=2, encoding='utf-8', **kwargs)
 
 def jsonRead(sFile):
+
+    if not osp.isfile(sFile):
+        raise EnvironmentError("No such file: '{}'".format(sFile))
+
     with open(sFile, 'rb') as fp:
         pyobj = json.load(fp, encoding='utf-8')
+
     return pyobj
 
 def sha1HashFile(sFilePath, chunk_size=16 * 1024):
