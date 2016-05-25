@@ -195,7 +195,7 @@ class PyConfParser(object):
                 raise ValueError('Could not cast configuration variable to a dictionary: "{0}".'
                                  .format(sVarName))
 
-        return copy(value)
+        return deepcopy(value)
 
     def _sectionHasVar(self, sVarName):
         return hasattr(self._pyobj, sVarName)
