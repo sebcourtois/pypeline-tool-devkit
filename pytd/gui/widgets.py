@@ -105,7 +105,12 @@ class QuickTreeItem(QtGui.QTreeWidgetItem):
         if flags is not None:
             self.setFlags(flags)
 
-        roles = roles if roles else treeWidget.defaultRoles
+        defaultRoles = treeWidget.defaultRoles
+        if roles is None:
+            roles = defaultRoles.copy()
+        elif defaultRoles:
+            roles.update((k, v) for k, v in defaultRoles.iteritems() if k not in roles)
+
         if roles:
             for role, args in roles.iteritems():
                 column, value = args
@@ -125,7 +130,7 @@ class QuickTree(QtGui.QTreeWidget):
         self.defaultFlags = Qt.ItemFlags(Qt.ItemIsSelectable |
                                          Qt.ItemIsUserCheckable |
                                          Qt.ItemIsEnabled)
-        self.defaultRoles = None
+        self.defaultRoles = {}
 
         self._connectSignals()
 
