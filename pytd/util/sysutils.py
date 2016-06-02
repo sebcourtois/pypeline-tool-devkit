@@ -156,10 +156,10 @@ def chunkate(iterable, chunkSize):
         #print start, stop
         yield islice(iterable, start, stop)
 
-def grouper(n, iterable, fillvalue=None):
+def grouper(n, iterable, **kwargs):
     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
     args = [iter(iterable)] * n
-    return itertools.izip_longest(fillvalue=fillvalue, *args)
+    return itertools.izip_longest(*args, **kwargs)
 
 ''
 #===============================================================================
