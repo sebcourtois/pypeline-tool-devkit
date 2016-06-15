@@ -39,11 +39,11 @@ def timer(func):
             ret = func(*args, **kwargs)
         except Exception:
             delta = time.time() - startTime
-            print '\n"{0}" failed in {1:f} seconds.'.format(func.__name__, delta)
+            print "<{}> failed in {:f} seconds.".format(func.__name__, delta)
             raise
 
         delta = time.time() - startTime
-        print('\n"{0}" finished in {1:f} seconds.'.format(func.__name__, delta))
+        print "<{}> finished in {:f} seconds.".format(func.__name__, delta)
         return ret
 
     return closure

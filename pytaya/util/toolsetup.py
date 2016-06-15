@@ -179,8 +179,6 @@ class ToolSetup(object):
 
         self.startScriptJobs()
 
-        import logging
-
         sMuteModList = ["requests.packages.urllib3.connectionpool",
                         "pytd.util.external.parse",
                         "PIL.Image", ]

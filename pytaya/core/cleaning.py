@@ -48,8 +48,45 @@ def deleteChildJunkShapes(*objList):
             logMsg('Removing junk shapes under "{0}": \n\t{1}'.format(obj, "\n\t".join(junkShapeList)))
             pm.delete(junkShapeList)
 
+def iterJunkIntermedShapes(*args, **kwargs):
+
+    bAsPyNode = not kwargs.pop("nodeNames", True)
+
+    for sShape in lsNodes(*args, o=True, type="shape", intermediateObjects=True, nodeNames=True, **kwargs):
+        if isJunkShape(sShape, checkIntermediateAttr=False):
+            yield asPyNode(sShape, bAsPyNode)
+
+def listJunkIntermedShapes(*args, **kwargs):
+    return list(iterJunkIntermedShapes(*args, **kwargs))
+
+def iterUsedIntermedShapes(*args, **kwargs):
+    bAsPyNode = not kwargs.pop("nodeNames", True)
+
+    for sShape in lsNodes(*args, o=True, type="shape", intermediateObjects=True, nodeNames=True, **kwargs):
+        print sShape
+        if not isJunkShape(sShape, checkIntermediateAttr=False):
+            yield asPyNode(sShape, bAsPyNode)
+
+def listUsedIntermedShapes(*args, **kwargs):
+    return list(iterUsedIntermedShapes(*args, **kwargs))
+
+def deleteAllJunkShapes(dryRun=False):
+
+    sJunkShapeList = listJunkIntermedShapes(nodeNames=True, not_rn=True)
+
+    if not sJunkShapeList:
+        logMsg("\nNo junk shapes found.")
+        return
+
+    logMsg("\nRemoving junk shapes... \n\t{0}".format("\n\tdelete junk shape: ".join(sJunkShapeList)))
+
+    if not dryRun:
+        mc.delete(sJunkShapeList)
+
+    logMsg("Removed {0} junk shapes.".format(len(sJunkShapeList)))
 
 def unsmoothAllMeshes():
+
     sMeshList = lsNodes(r=True, type="mesh", not_rn=True, nodeNames=True)
     if sMeshList:
         mc.displaySmoothness(sMeshList, polygonObject=1)
@@ -57,6 +94,12 @@ def unsmoothAllMeshes():
 def cleanLambert1():
 
     oLambert1 = pm.PyNode("lambert1")
-
     for oInputAttr in oLambert1.inputs(p=True):
         oInputAttr.disconnect()
+
+def asPyNode(obj, bCast):
+    if bCast:
+        return pm.PyNode(obj) if not isinstance(obj, pm.PyNode) else obj
+    else:
+        return obj
+
