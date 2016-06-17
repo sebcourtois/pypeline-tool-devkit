@@ -63,12 +63,12 @@ def importFile(sFilePath, **kwargs):
 
     if bNewScene == "NoEntry":
 
-        sConfirm = pm.confirmDialog(title="Import File"
-                                    , message='Import file into ... ?'
-                                    , button=["New Scene", "Current Scene", "Cancel"]
-                                    , defaultButton="New Scene"
-                                    , cancelButton="Cancel"
-                                    , dismissString="Cancel"
+        sConfirm = pm.confirmDialog(title="Import File",
+                                    message='Import file into ... ?',
+                                    button=["New Scene", "Current Scene", "Cancel"],
+                                    defaultButton="New Scene",
+                                    cancelButton="Cancel",
+                                    dismissString="Cancel",
                                     )
 
         if sConfirm == "Cancel":
@@ -82,18 +82,18 @@ def importFile(sFilePath, **kwargs):
             return
 
     if bReference:
-        oNewNodeList = pm.createReference(sFilePath
-                                        , namespace=sNamespace
-                                        , returnNewNodes=bOutNewNodes
-                                        , **kwargs)
+        oNewNodeList = pm.createReference(sFilePath,
+                                          namespace=sNamespace,
+                                          returnNewNodes=bOutNewNodes,
+                                          **kwargs)
     else:
         if bUseNamespaces:
             kwargs["namespace"] = sNamespace
 
-        oNewNodeList = pm.importFile(sResolvedPath
-                                    , returnNewNodes=bOutNewNodes
-                                    , preserveReferences=bPreserveRefs
-                                    , **kwargs)
+        oNewNodeList = pm.importFile(sResolvedPath,
+                                     returnNewNodes=bOutNewNodes,
+                                     preserveReferences=bPreserveRefs,
+                                     **kwargs)
 
     oNewNodeList = listForNone(oNewNodeList)
 
