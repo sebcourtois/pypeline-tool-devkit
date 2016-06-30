@@ -1,6 +1,6 @@
 
 from PySide import QtGui
-from PySide.QtCore import Qt
+from PySide.QtCore import Qt, QSize
 
 from pytd.util.sysutils import toUnicode, isIterable
 from pytd.util.fsutils import pathJoin, pathNorm
@@ -120,6 +120,22 @@ class QuickTreeItem(QtGui.QTreeWidgetItem):
                 else:
                     self.setData(column, role, value)
 
+class QuickTreeItemDelegate(QtGui.QStyledItemDelegate):
+
+    def __init__(self, parent=None):
+        super(QuickTreeItemDelegate, self).__init__(parent)
+        self.__itemMarginSize = None
+
+    def setItemMarginSize(self, w, h):
+        self.__itemMarginSize = QSize(w, h)
+
+    def sizeHint(self, option, index):
+        qSize = QtGui.QStyledItemDelegate.sizeHint(self, option, index)
+        itemMarginSize = self.__itemMarginSize
+        if itemMarginSize:
+            qSize += itemMarginSize
+        return qSize
+
 class QuickTree(QtGui.QTreeWidget):
 
     def __init__(self, parent):
@@ -132,6 +148,7 @@ class QuickTree(QtGui.QTreeWidget):
                                          Qt.ItemIsEnabled)
         self.defaultRoles = {}
 
+        self.setItemDelegate(QuickTreeItemDelegate(self))
         self._connectSignals()
 
     def createTree(self, pathData, rootPath=""):
