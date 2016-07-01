@@ -13,6 +13,7 @@ from .utils import ItemUserFlag
 from .utils import ItemUserRole
 from .utils import toDisplayText
 from pytd.gui.dialogs import confirmDialog
+from itertools import islice
 
 class PropertyIconProvider(object):
 
@@ -325,9 +326,9 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         parentItem = self.invisibleRootItem()
 
         for metaobj in metamodel.iterChildren():
-            self.loadRowItems(metaobj, parentItem)
+            self.loadRow(metaobj, parentItem)
 
-    def loadRowItems(self, metaobj, parentItem):
+    def loadRow(self, metaobj, parentItem):
 
         if not metaobj.displayViewItems():
             return ()
@@ -343,6 +344,35 @@ class PropertyItemModel(QtGui.QStandardItemModel):
                 item.setupData(item._metaprpty)
 
         return rowItems
+
+    def loadRows(self, metaobjList, parentItem):
+
+        rowItems = tuple(self._iterRowItems(metaobjList))
+        #print len(metaobjList), len(rowItems)
+        parentItem.appendRows(rowItems)
+
+        for item in rowItems:
+            if item.isValid():
+                item.setupData(item._metaprpty)
+
+        return rowItems
+
+    def _iterRowItems(self, metaobjList):
+
+        itemCls = self.__class__.standardItemClass
+        propertyNames = self.propertyNames
+
+        for metaobj in metaobjList:
+
+#            if not metaobj.displayViewItems():
+#                continue
+
+            metaprpties = metaobj.iterMetaPrpties(propertyNames)
+
+            for metaprpty in metaprpties:
+                item = itemCls(metaprpty)
+                #item.setColumnCount(numCol)
+                yield item
 
     def iterChildRow(self, row):
         for column in xrange(self.columnCount()):
