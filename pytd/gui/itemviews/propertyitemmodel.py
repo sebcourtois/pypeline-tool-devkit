@@ -3,7 +3,7 @@ from PySide import QtGui
 from PySide.QtCore import Qt
 
 from pytd.util.logutils import logMsg
-from pytd.util.sysutils import toUnicode, toStr
+from pytd.util.sysutils import toUnicode, toStr, getCaller
 from pytd.util.strutils import labelify
 from pytd.util.qtutils import setWaitCursor
 
@@ -13,7 +13,6 @@ from .utils import ItemUserFlag
 from .utils import ItemUserRole
 from .utils import toDisplayText
 from pytd.gui.dialogs import confirmDialog
-from itertools import islice
 
 class PropertyIconProvider(object):
 
@@ -170,6 +169,7 @@ class PropertyItem(QtGui.QStandardItem):
 
     @setWaitCursor
     def loadChildren(self):
+        #print "***********************", getCaller(), self, "loadChildren"
         self._metaobj.loadChildren()
 
     def iterChildItems(self):
@@ -207,6 +207,7 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         self._proxyModels = []
         self.__dynSortFilterStates = []
+
         self._metamodel = metamodel
         metamodel.setItemModel(self)
 
@@ -388,12 +389,14 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         for i, prxModel in enumerate(self._proxyModels):
             bState = bStateList[i]
+            if bState:
+                prxModel.sort(prxModel.sortColumn(), prxModel.sortOrder())
             prxModel.setDynamicSortFilter(bState)
 
     def disableDynamicSortFilters(self):
 
         if self.__dynSortFilterStates:
-            return []#self.__dynSortFilterStates
+            return []
 
         bStateList = []
         for prxModel in self._proxyModels:
@@ -427,7 +430,10 @@ class PropertyItemModel(QtGui.QStandardItemModel):
             return False
 
         parentItem = self.itemFromIndex(parentIndex)
-        return parentItem.hasChildren() and not parentItem.childrenLoaded
+        bCanFetch = parentItem.hasChildren() and (not parentItem.childrenLoaded)
+
+        #print getCaller(fo=False), parentItem, "canFetchMore", bCanFetch
+        return bCanFetch
 
     def fetchMore(self, parentIndex):
 
@@ -435,6 +441,8 @@ class PropertyItemModel(QtGui.QStandardItemModel):
             return
 
         parentItem = self.itemFromIndex(parentIndex)
+
+        #print "###########################", getCaller(fo=0), parentItem, "childrenLoaded", parentItem.childrenLoaded
 
         if parentItem.childrenLoaded:
             return

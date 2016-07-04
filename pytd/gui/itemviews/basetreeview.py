@@ -10,6 +10,7 @@ from .utils import ItemUserFlag
 from .baseproxymodel import BaseProxyModel
 from .propertyitemmodel import PropertyItemModel
 from .baseitemdelegate import BaseItemDelegate
+from pytd.util.sysutils import getCaller
 
 class BaseTreeView(QtGui.QTreeView):
 
@@ -32,7 +33,7 @@ class BaseTreeView(QtGui.QTreeView):
 #        self.header().setStretchLastSection( True )
         self.setAlternatingRowColors(True)
         self.setItemDelegate(self.__class__.itemDelegateClass(self))
-        self.setEditTriggers(QtGui.QAbstractItemView.DoubleClicked)
+        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.setTextElideMode(Qt.ElideRight)
 
         self.setItemHeight(16)
@@ -70,10 +71,13 @@ class BaseTreeView(QtGui.QTreeView):
         else:
             self.setModel(model)
 
-    def edit(self, index, trigger, event):
+    def edit(self, index, *args):
 
-        result = QtGui.QTreeView.edit(self, index, trigger, event)
+        if args:
+            result = QtGui.QTreeView.edit(self, index, *args)
+            return result
 
+        #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", getCaller(fo=0), self, "edit()", index
         editor = self.indexWidget(index)
         if editor:
 
@@ -103,8 +107,6 @@ class BaseTreeView(QtGui.QTreeView):
 
                 QtGui.QApplication.sendEvent(editor, pressEvent)
                 QtGui.QApplication.sendEvent(editor, releaseEvent)
-
-        return result
 
     def commitData(self, editor):
         QtGui.QTreeView.commitData(self, editor)
