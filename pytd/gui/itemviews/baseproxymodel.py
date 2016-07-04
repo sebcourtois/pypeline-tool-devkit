@@ -40,3 +40,8 @@ class BaseProxyModel(QtGui.QSortFilterProxyModel):
                 return l > r
 
         return QtGui.QSortFilterProxyModel.lessThan(self, leftIndex, rightIndex)
+
+    def setSourceModel(self, srcModel):
+        srcModel._proxyModels.append(self)
+        return QtGui.QSortFilterProxyModel.setSourceModel(self, srcModel)
+

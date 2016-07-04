@@ -376,7 +376,7 @@ class MetaObject(object):
 
         try:
             sClsName = upperFirst(cls.classLabel) if hasattr(cls, "classLabel") else cls.__name__
-            sRepr = (u"{0}('{1}')".format(sClsName, toStr(getattr(self, cls.classReprAttr))))
+            sRepr = ("{0}('{1}')".format(sClsName, toStr(getattr(self, cls.classReprAttr))))
         except AttributeError:
             sRepr = cls.__name__
 

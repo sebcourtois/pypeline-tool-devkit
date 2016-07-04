@@ -205,6 +205,8 @@ class PropertyItemModel(QtGui.QStandardItemModel):
     def __init__(self, metamodel, parent=None):
         super(PropertyItemModel, self).__init__(parent)
 
+        self._proxyModels = []
+        self.__dynSortFilterStates = []
         self._metamodel = metamodel
         metamodel.setItemModel(self)
 
@@ -214,7 +216,6 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         self.loadProperties(metamodel)
         self.setupHeaderData(metamodel)
         self.populateModel(metamodel)
-
 
         # self.rowsInserted.connect(self.onRowsInserted)
         # self.rowsMoved.connect(self.onRowsMoved)
@@ -335,27 +336,32 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         itemCls = self.__class__.standardItemClass
 
-        metaprpties = metaobj.iterMetaPrpties(self.propertyNames)
-        rowItems = tuple(itemCls(metaprpty) for metaprpty in metaprpties)
-        parentItem.appendRow(rowItems)
+        bStateList = self.disableDynamicSortFilters()
 
-        for item in rowItems:
-            if item.isValid():
-                item.setupData(item._metaprpty)
+        try:
+            metaprpties = metaobj.iterMetaPrpties(self.propertyNames)
+            rowItems = tuple(itemCls(metaprpty) for metaprpty in metaprpties)
+            parentItem.appendRow(rowItems)
+
+            for item in rowItems:
+                if item.isValid():
+                    item.setupData(item._metaprpty)
+        finally:
+            self.restoreDynamicSortFilters(bStateList)
 
         return rowItems
 
     def loadRows(self, metaobjList, parentItem):
 
-        rowItems = tuple(self._iterRowItems(metaobjList))
-        #print len(metaobjList), len(rowItems)
-        parentItem.appendRows(rowItems)
+        rowList = tuple(self._iterRowItems(metaobjList))
+        for c in xrange(self.columnCount()):
+            colItems = tuple(r[c] for r in rowList)
+            parentItem.appendColumn(colItems)
+            for item in colItems:
+                if item.isValid():
+                    item.setupData(item._metaprpty)
 
-        for item in rowItems:
-            if item.isValid():
-                item.setupData(item._metaprpty)
-
-        return rowItems
+        return rowList
 
     def _iterRowItems(self, metaobjList):
 
@@ -364,15 +370,39 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         for metaobj in metaobjList:
 
-#            if not metaobj.displayViewItems():
-#                continue
+            if not metaobj.displayViewItems():
+                #yield tuple()
+                continue
 
             metaprpties = metaobj.iterMetaPrpties(propertyNames)
 
-            for metaprpty in metaprpties:
-                item = itemCls(metaprpty)
-                #item.setColumnCount(numCol)
-                yield item
+            rowItems = tuple(itemCls(metaprpty) for metaprpty in metaprpties)
+            yield rowItems
+
+    def restoreDynamicSortFilters(self, bStateList):
+
+        if not bStateList:
+            return
+
+        self.__dynSortFilterStates = []
+
+        for i, prxModel in enumerate(self._proxyModels):
+            bState = bStateList[i]
+            prxModel.setDynamicSortFilter(bState)
+
+    def disableDynamicSortFilters(self):
+
+        if self.__dynSortFilterStates:
+            return []#self.__dynSortFilterStates
+
+        bStateList = []
+        for prxModel in self._proxyModels:
+            bStateList.append(prxModel.dynamicSortFilter())
+            prxModel.setDynamicSortFilter(False)
+
+        self.__dynSortFilterStates = bStateList
+
+        return bStateList
 
     def iterChildRow(self, row):
         for column in xrange(self.columnCount()):
