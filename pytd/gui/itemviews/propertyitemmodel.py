@@ -63,8 +63,9 @@ class PropertyItem(QtGui.QStandardItem):
 
     def setupData(self, metaprpty):
 
-        msg = u"{} has not been added to a model yet !".format(self)
-        assert (self.model() is not None), msg
+        model = self.model()
+        if model is None:
+            raise AssertionError(u"{} has not been added to a model yet !".format(self))
 
         self._metaobj = metaprpty._metaobj
 
@@ -73,7 +74,7 @@ class PropertyItem(QtGui.QStandardItem):
 
         if self.column() == 0:
 
-            cachedPropertyItems = self.model()._cachedPropertyItems
+            cachedPropertyItems = model._cachedPropertyItems
             mpCacheKey = id(metaprpty)
 
             curItems = cachedPropertyItems.get(mpCacheKey)
@@ -87,15 +88,27 @@ class PropertyItem(QtGui.QStandardItem):
 
     def loadData(self, metaprpty):
 
-        self.setData(toDisplayText(metaprpty.getattr_()), Qt.DisplayRole)
-        self.setData(getattr(self._metaobj.__class__, "classUiPriority", 0),
-                     ItemUserRole.GroupSortRole)
+        sDisplayText = toDisplayText(metaprpty.getattr_())
+        iSortValue = getattr(self._metaobj.__class__, "classUiPriority", 0)
+
+        roleDataDct = {Qt.DisplayRole:sDisplayText,
+                       ItemUserRole.GroupSortRole:iSortValue,
+                       }
+
+#        self.setData(sDisplayText, Qt.DisplayRole)
+#        self.setData(iSortValue,
+#                     ItemUserRole.GroupSortRole)
 
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
             if provider:
                 icon = provider.icon(metaprpty.iconSource())
-                self.setData(icon, Qt.DecorationRole)
+                roleDataDct.update({Qt.DecorationRole:icon})
+                #self.setData(icon, Qt.DecorationRole)
+
+        self.model().setItemData(self.index(), roleDataDct)
+
+        return roleDataDct
 
     def loadImage(self):
 
@@ -109,6 +122,9 @@ class PropertyItem(QtGui.QStandardItem):
                     image = self.icon()
 
                 self.setData(image, ItemUserRole.ImageRole)
+
+                return image
+        return None
 
     def setData(self, value, role=Qt.EditRole):
 
