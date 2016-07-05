@@ -53,13 +53,20 @@ def bakeDiffuseToVertexColor(**kwargs):
     oReflDct = {}
     for oMat in lsNodes(type=mc.listNodeTypes('shader', ex="texture"), not_referencedNodes=not bOnRefs):
         if oMat.hasAttr("reflectivity"):
-            oInputs = oMat.attr("reflectivity").inputs(sourceFirst=True, c=True, plugs=True)
+            oReflAttr = oMat.attr("reflectivity")
+            oInputs = oReflAttr.inputs(sourceFirst=True, c=True, plugs=True)
             if oInputs:
                 oReflDct[oMat] = dict(oInputs)
                 pm.disconnectAttr(*oInputs)
             else:
-                oReflDct[oMat] = oMat.getAttr("reflectivity")
-            oMat.setAttr("reflectivity", 0)
+                try:
+                    value = oReflAttr.get()
+                except RuntimeError as e:
+                    pm.displayInfo(u"{}: {}".format(e.message.strip(), oReflAttr))
+                    continue
+                oReflDct[oMat] = value
+
+            oReflAttr.set(0.0)
 
 
     if sCamShape:
