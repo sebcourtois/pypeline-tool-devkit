@@ -54,7 +54,6 @@ class PropertyItem(QtGui.QStandardItem):
         logMsg(log='all')
 
         metaprpty = self._metaprpty
-        self.loadFlags(metaprpty)
         self.loadData(metaprpty)
 
         image = self.data(ItemUserRole.ImageRole)
@@ -69,7 +68,6 @@ class PropertyItem(QtGui.QStandardItem):
 
         self._metaobj = metaprpty._metaobj
 
-        self.loadFlags(metaprpty)
         self.loadData(metaprpty)
 
         if self.column() == 0:
@@ -88,27 +86,43 @@ class PropertyItem(QtGui.QStandardItem):
 
     def loadData(self, metaprpty):
 
+        model = self.model()
+        itemData = model.itemData(self.index())
+        itemData.update(self._dataFromProperty(metaprpty))
+        model.setItemData(self.index(), itemData)
+
+    def _dataFromProperty(self, metaprpty):
+
         sDisplayText = toDisplayText(metaprpty.getattr_())
         iSortValue = getattr(self._metaobj.__class__, "classUiPriority", 0)
+        iFlags = int(self._flagsFromProperty(metaprpty))
 
-        roleDataDct = {Qt.DisplayRole:sDisplayText,
-                       ItemUserRole.GroupSortRole:iSortValue,
-                       }
-
-#        self.setData(sDisplayText, Qt.DisplayRole)
-#        self.setData(iSortValue,
-#                     ItemUserRole.GroupSortRole)
+        itemData = {Qt.DisplayRole:sDisplayText,
+                    ItemUserRole.GroupSortRole:iSortValue,
+                    31:iFlags,
+                    }
 
         if metaprpty.getParam("uiDecorated", False):
             provider = self.model().iconProvider()
             if provider:
                 icon = provider.icon(metaprpty.iconSource())
-                roleDataDct.update({Qt.DecorationRole:icon})
-                #self.setData(icon, Qt.DecorationRole)
+                itemData.update({Qt.DecorationRole:icon})
 
-        self.model().setItemData(self.index(), roleDataDct)
+        return itemData
 
-        return roleDataDct
+    def _flagsFromProperty(self, metaprpty):
+
+        itemFlags = Qt.ItemFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+        editableState = metaprpty.getParam("uiEditable", Eds.Disabled)
+        if editableState:
+            # #Allow edition of the column
+            itemFlags = Qt.ItemFlags(Qt.ItemIsEditable | itemFlags)
+
+            if editableState == Eds.Multi:
+                itemFlags = Qt.ItemFlags(ItemUserFlag.MultiEditable | itemFlags)
+
+        return itemFlags
 
     def loadImage(self):
 
@@ -140,13 +154,13 @@ class PropertyItem(QtGui.QStandardItem):
                 bSuccess = metaobj.setPrpty(self.propertyName, value, warn=False)
             except Exception, err:
                 sMsg = u"Could not set {}.{}:\n\n".format(metaobj, self.propertyName)
-                confirmDialog(title='SORRY !'
-                            , message=sMsg + toStr(err)
-                            , button=["OK"]
-                            , defaultButton="OK"
-                            , cancelButton="OK"
-                            , dismissString="OK"
-                            , icon="critical")
+                confirmDialog(title='SORRY !',
+                              message=sMsg + toStr(err),
+                              button=["OK"],
+                              defaultButton="OK",
+                              cancelButton="OK",
+                              dismissString="OK",
+                              icon="critical")
                 raise
 
             if bSuccess:
@@ -155,20 +169,6 @@ class PropertyItem(QtGui.QStandardItem):
 
         else:
             return QtGui.QStandardItem.setData(self, value, role)
-
-    def loadFlags(self, metaprpty):
-
-        itemFlags = Qt.ItemFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-
-        editableState = metaprpty.getParam("uiEditable", Eds.Disabled)
-        if editableState:
-            # #Allow edition of the column
-            itemFlags = Qt.ItemFlags(Qt.ItemIsEditable | itemFlags)
-
-            if editableState == Eds.Multi:
-                itemFlags = Qt.ItemFlags(ItemUserFlag.MultiEditable | itemFlags)
-
-        self.setFlags(itemFlags)
 
     def isValid(self):
         return (self._metaprpty is not None)
