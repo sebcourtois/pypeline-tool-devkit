@@ -103,10 +103,21 @@ class PropertyItem(QtGui.QStandardItem):
                     }
 
         if metaprpty.getParam("uiDecorated", False):
+
             provider = self.model().iconProvider()
             if provider:
                 icon = provider.icon(metaprpty.iconSource())
                 itemData.update({Qt.DecorationRole:icon})
+
+            image = self.data(ItemUserRole.ImageRole)
+            #print "currentImage", metaprpty.getattr_(), image
+            if not image:
+                parentItem = self.parent()
+                if parentItem and parentItem.isValid():
+                    parentImage = parentItem.data(ItemUserRole.ImageRole)
+                    #print "parentImage", parentItem, parentImage
+                    if parentImage:
+                        itemData.update({ItemUserRole.ImageRole:parentImage})
 
         return itemData
 
@@ -126,19 +137,23 @@ class PropertyItem(QtGui.QStandardItem):
 
     def loadImage(self):
 
-        metaprpty = self._metaprpty
-        if metaprpty.getParam("uiDecorated", False):
+        image = None
 
-            provider = self.model().iconProvider()
-            if provider:
-                image = provider.image(metaprpty.imageSource())
-                if image.isNull():
-                    image = self.icon()
+        model = self.model()
+        model.blockSignals(True)
+        try:
+            metaprpty = self._metaprpty
+            if metaprpty.getParam("uiDecorated", False):
+                provider = model.iconProvider()
+                if provider:
+                    image = provider.image(metaprpty.imageSource())
+                    if not image.isNull():
+                        self.setData(image, ItemUserRole.ImageRole)
+                        self.setData(QtGui.QIcon(image), Qt.DecorationRole)
+        finally:
+            model.blockSignals(False)
 
-                self.setData(image, ItemUserRole.ImageRole)
-
-                return image
-        return None
+        return image
 
     def setData(self, value, role=Qt.EditRole):
 
@@ -186,6 +201,7 @@ class PropertyItem(QtGui.QStandardItem):
     @setWaitCursor
     def loadChildren(self):
         #print "***********************", getCaller(), self, "loadChildren"
+        self.loadImage()
         self._metaobj.loadChildren()
 
     def iterChildItems(self):

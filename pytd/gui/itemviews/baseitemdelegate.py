@@ -23,6 +23,19 @@ class BaseItemDelegate(QtGui.QStyledItemDelegate):
 
         return qSize
 
+#    def initStyleOption(self, option, index):
+#
+#        rowHeight = option.decorationSize.height()
+#        print option.decorationSize
+#
+#        QtGui.QStyledItemDelegate.initStyleOption(self, option, index)
+#        option = QtGui.QStyleOptionViewItemV4(option)
+#
+#        if not option.icon.isNull():
+##            pixmap = option.icon.pixmap(option.decorationSize)
+##            option.icon = QtGui.QIcon(clampPixmapSize(pixmap, rowHeight - self.decorationMargin))
+#            option.decorationSize = QSize(rowHeight, rowHeight)
+
     def __repr__(self):
 
         try:
