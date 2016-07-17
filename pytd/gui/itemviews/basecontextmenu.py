@@ -2,7 +2,7 @@
 import functools
 import inspect as insp
 
-from PySide import QtGui
+from PySide import QtGui, QtCore
 SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
 
 from pytd.gui.itemviews.utils import createAction
@@ -12,6 +12,9 @@ from pytd.util.sysutils import toStr, inDevMode, hostApp
 from pytd.util.logutils import logMsg
 
 class BaseContextMenu(QtGui.QMenu):
+
+    beforeActionLaunched = QtCore.Signal(dict, bool)
+    afterActionLaunched = QtCore.Signal(dict, bool)
 
     def __init__(self, parentView):
         super(BaseContextMenu, self).__init__(parentView)
@@ -82,6 +85,8 @@ class BaseContextMenu(QtGui.QMenu):
 
         bCheckable = actionDct.get("checkable", False)
 
+        self.beforeActionLaunched.emit(actionDct, checked)
+
         if not bCheckable:
             self.assertActionTargets()
 
@@ -112,6 +117,8 @@ class BaseContextMenu(QtGui.QMenu):
                         , dismissString="OK"
                         , icon="critical")
             raise
+
+        self.afterActionLaunched.emit(actionDct, checked)
 
     def getActionsConfig(self):
         return []

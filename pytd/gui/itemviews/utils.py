@@ -17,6 +17,7 @@ class ItemUserFlag:
 class ItemUserRole:
     ImageRole = Qt.UserRole + 1
     GroupSortRole = Qt.UserRole + 2
+    IconRole = Qt.UserRole + 3
 
 def createAction(text, parentWidget, **kwargs):
 

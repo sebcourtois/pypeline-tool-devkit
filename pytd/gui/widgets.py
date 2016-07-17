@@ -1,11 +1,24 @@
 
-from PySide import QtGui
+from PySide import QtGui, QtCore
 from PySide.QtCore import Qt, QSize
 
 from pytd.util.sysutils import toUnicode, isIterable
 from pytd.util.fsutils import pathJoin, pathNorm
 from pytd.util.fsutils import pathRelativeTo
 from pytd.util.utiltypes import OrderedTree
+
+_PATH_BAR_SS = """
+QToolBar{
+    spacing:0px;
+}
+
+QToolButton{
+    padding-right:  -1px;
+    padding-left:   -1px;
+    padding-top:     1px;
+    padding-bottom:  1px;
+}
+"""
 
 class ImageButton(QtGui.QPushButton):
 
@@ -119,6 +132,65 @@ class QuickTreeItem(QtGui.QTreeWidgetItem):
                         self.setData(c, role, value)
                 else:
                     self.setData(column, role, value)
+
+class PathSwitchBox(QtGui.QComboBox):
+
+    pathChanged = QtCore.Signal(unicode)
+
+    def __init__(self, *args, **kwargs):
+        super(PathSwitchBox, self).__init__(*args, **kwargs)
+
+        self.setEditable(True)
+        self.setIconSize(QSize(16, 16))
+
+        delegate = QuickTreeItemDelegate(self.view())
+        delegate.setItemMarginSize(0, 4)
+        self.view().setItemDelegate(delegate)
+
+        toolBar = ToolBar(self)
+        self.toolBar = toolBar
+
+        toolBar.setFocusProxy(self)
+        toolBar.setStyleSheet(_PATH_BAR_SS)
+        toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        toolBar.setIconSize(QSize(16, 16))
+        toolBar.setLayoutDirection(Qt.RightToLeft)
+
+        lineEdit = self.lineEdit()
+        lineEdit.setVisible(False)
+
+        lineEdit.returnPressed.connect(self.onEditValidated)
+        self.activated.connect(self.onPathSelected)
+
+    def setLineEditVisible(self, bShow):
+        self.lineEdit().setVisible(bShow)
+        self.toolBar.setVisible(not bShow)
+
+    def onPathSelected(self):
+        sCurText = self.currentText()
+        if self.toolBar.isVisible():
+            self.pathChanged.emit(sCurText)
+        self.setCurrentIndex(-1)
+        self.setEditText(sCurText)
+
+    def onEditValidated(self):
+        self.setLineEditVisible(False)
+        self.pathChanged.emit(self.currentText())
+
+    def resizeEvent(self, *args, **kwargs):
+        res = QtGui.QComboBox.resizeEvent(self, *args, **kwargs)
+        self.updateToolBarGeometry()
+        return res
+
+    def mouseDoubleClickEvent(self, event):
+        child = self.childAt(event.pos())
+        if child and child.objectName() == "spacer":
+            self.setLineEditVisible(True)
+        return QtGui.QComboBox.mouseDoubleClickEvent(self, event)
+
+    def updateToolBarGeometry(self):
+        self.toolBar.setGeometry(self.lineEdit().geometry())
+
 
 class QuickTreeItemDelegate(QtGui.QStyledItemDelegate):
 

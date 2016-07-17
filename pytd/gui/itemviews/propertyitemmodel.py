@@ -97,17 +97,20 @@ class PropertyItem(QtGui.QStandardItem):
         iSortValue = getattr(self._metaobj.__class__, "classUiPriority", 0)
         iFlags = int(self._flagsFromProperty(metaprpty))
 
-        itemData = {Qt.DisplayRole:sDisplayText,
+        itemData = {31:iFlags, Qt.DisplayRole:sDisplayText,
                     ItemUserRole.GroupSortRole:iSortValue,
-                    31:iFlags,
                     }
 
         if metaprpty.getParam("uiDecorated", False):
 
             provider = self.model().iconProvider()
             if provider:
+                bgIcon = None
                 icon = provider.icon(metaprpty.iconSource())
-                itemData.update({Qt.DecorationRole:icon})
+                if icon and not icon.isNull():
+                    bgIcon = self.model().bgIcon
+                itemData.update({Qt.DecorationRole:bgIcon,
+                                 ItemUserRole.IconRole:icon})
 
             image = self.data(ItemUserRole.ImageRole)
             #print "currentImage", metaprpty.getattr_(), image
@@ -149,7 +152,7 @@ class PropertyItem(QtGui.QStandardItem):
                     image = provider.image(metaprpty.imageSource())
                     if not image.isNull():
                         self.setData(image, ItemUserRole.ImageRole)
-                        self.setData(QtGui.QIcon(image), Qt.DecorationRole)
+                        self.setData(QtGui.QIcon(image), ItemUserRole.IconRole)
         finally:
             model.blockSignals(False)
 
@@ -253,6 +256,10 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         # self.rowsInserted.connect(self.onRowsInserted)
         # self.rowsMoved.connect(self.onRowsMoved)
         # self.columnsInserted.connect(self.onRowsInserted)
+
+        pxmap = QtGui.QPixmap(64, 64)
+        pxmap.fill(QtGui.QColor(0, 0, 0, 0))
+        self.bgIcon = QtGui.QIcon(pxmap)
 
     def onRowsInserted(self, parentIndex, start, end):
 
@@ -386,7 +393,7 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
     def loadRows(self, metaobjList, parentItem):
 
-        rowList = tuple(self._iterRowItems(metaobjList))
+        rowList = tuple(self._iterNewRowItems(metaobjList))
         for c in xrange(self.columnCount()):
             colItems = tuple(r[c] for r in rowList)
             parentItem.appendColumn(colItems)
@@ -396,7 +403,7 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         return rowList
 
-    def _iterRowItems(self, metaobjList):
+    def _iterNewRowItems(self, metaobjList):
 
         itemCls = self.__class__.standardItemClass
         propertyNames = self.propertyNames

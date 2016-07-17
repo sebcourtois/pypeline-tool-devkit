@@ -377,6 +377,13 @@ class BaseTreeView(QtGui.QTreeView):
 
         return False
 
+    def sourceModel(self):
+        viewModel = self.model()
+        if isinstance(viewModel, QtGui.QSortFilterProxyModel):
+            return viewModel.sourceModel()
+        else:
+            return viewModel
+
 
     def __repr__(self):
 
