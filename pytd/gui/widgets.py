@@ -106,7 +106,7 @@ class TabBar(QtGui.QTabBar):
 
 class PathSwitchBox(QtGui.QComboBox):
 
-    pathChanged = QtCore.Signal(unicode)
+    pathChanged = QtCore.Signal(str, bool)
 
     def __init__(self, *args, **kwargs):
         super(PathSwitchBox, self).__init__(*args, **kwargs)
@@ -130,23 +130,21 @@ class PathSwitchBox(QtGui.QComboBox):
         lineEdit = self.lineEdit()
         lineEdit.setVisible(False)
 
-        lineEdit.returnPressed.connect(self.onEditValidated)
-        self.activated.connect(self.onPathSelected)
+        lineEdit.returnPressed.connect(self.onPathEdited)
+        self.activated[str].connect(self.onPathSelected)
 
     def setLineEditVisible(self, bShow):
         self.lineEdit().setVisible(bShow)
         self.toolBar.setVisible(not bShow)
 
-    def onPathSelected(self):
-        sCurText = self.currentText()
+    def onPathSelected(self, sCurText):
         if self.toolBar.isVisible():
-            self.pathChanged.emit(sCurText)
+            self.pathChanged.emit(sCurText, False)
         self.setCurrentIndex(-1)
         self.setEditText(sCurText)
 
-    def onEditValidated(self):
-        self.setLineEditVisible(False)
-        self.pathChanged.emit(self.currentText())
+    def onPathEdited(self):
+        self.pathChanged.emit(self.currentText(), True)
 
     def resizeEvent(self, *args, **kwargs):
         res = QtGui.QComboBox.resizeEvent(self, *args, **kwargs)

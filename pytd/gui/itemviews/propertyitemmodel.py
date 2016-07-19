@@ -203,11 +203,11 @@ class PropertyItem(QtGui.QStandardItem):
 
     @setWaitCursor
     def loadChildren(self):
-        
+
         image = self.data(ItemUserRole.ImageRole)
         if not image:
             self.loadImage()
-            
+
         self._metaobj.loadChildren()
 
     def iterChildItems(self):
@@ -246,6 +246,10 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         self._proxyModels = []
         self.__dynSortFilterStates = []
 
+        pxmap = QtGui.QPixmap(64, 64)
+        pxmap.fill(QtGui.QColor(0, 0, 0, 0))
+        self.bgIcon = QtGui.QIcon(pxmap)
+
         self._metamodel = metamodel
         metamodel.setItemModel(self)
 
@@ -260,9 +264,6 @@ class PropertyItemModel(QtGui.QStandardItemModel):
         # self.rowsMoved.connect(self.onRowsMoved)
         # self.columnsInserted.connect(self.onRowsInserted)
 
-        pxmap = QtGui.QPixmap(64, 64)
-        pxmap.fill(QtGui.QColor(0, 0, 0, 0))
-        self.bgIcon = QtGui.QIcon(pxmap)
 
     def onRowsInserted(self, parentIndex, start, end):
 
@@ -501,6 +502,29 @@ class PropertyItemModel(QtGui.QStandardItemModel):
             self.__iconProvider = self.__class__.iconProviderClass(*args)
 
         return self.__iconProvider
+
+    def childFromText(self, sText, parentItem=None, column=0):
+
+        foundItems = self.findItems(sText, parentItem=parentItem, column=column,
+                                    role=Qt.DisplayRole, hits=1, flags=Qt.MatchFixedString)
+        return foundItems[0] if foundItems else None
+
+    def findItems(self, value, parentItem=None, column=0, role=Qt.DisplayRole, hits=-1, flags=Qt.MatchFixedString):
+
+        parentItem = parentItem if parentItem else self.invisibleRootItem()
+
+        startItem = parentItem.child(0, column)
+        if not startItem:
+            return []
+
+        foundList = self.match(startItem.index(), role, value, hits, flags)
+        if not foundList:
+            return []
+
+        for i, index in enumerate(foundList):
+            foundList[i] = self.itemFromIndex(index)
+
+        return foundList
 
     def __repr__(self):
 
