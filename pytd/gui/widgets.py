@@ -104,35 +104,6 @@ class TabBar(QtGui.QTabBar):
             self.__clearingUp = False
 
 
-class QuickTreeItem(QtGui.QTreeWidgetItem):
-
-    def __init__(self, *args, **kwargs):
-
-        flags = kwargs.pop("flags", None)
-        roles = kwargs.pop("roles", None)
-
-        super(QuickTreeItem, self).__init__(*args, **kwargs)
-
-        treeWidget = self.treeWidget()
-        flags = flags if flags is not None else treeWidget.defaultFlags
-        if flags is not None:
-            self.setFlags(flags)
-
-        defaultRoles = treeWidget.defaultRoles
-        if roles is None:
-            roles = defaultRoles.copy()
-        elif defaultRoles:
-            roles.update((k, v) for k, v in defaultRoles.iteritems() if k not in roles)
-
-        if roles:
-            for role, args in roles.iteritems():
-                column, value = args
-                if isIterable(column):
-                    for c in column:
-                        self.setData(c, role, value)
-                else:
-                    self.setData(column, role, value)
-
 class PathSwitchBox(QtGui.QComboBox):
 
     pathChanged = QtCore.Signal(unicode)
@@ -182,15 +153,44 @@ class PathSwitchBox(QtGui.QComboBox):
         self.updateToolBarGeometry()
         return res
 
-    def mouseDoubleClickEvent(self, event):
-        child = self.childAt(event.pos())
-        if child and child.objectName() == "spacer":
-            self.setLineEditVisible(True)
-        return QtGui.QComboBox.mouseDoubleClickEvent(self, event)
+#    def mouseDoubleClickEvent(self, event):
+#        child = self.childAt(event.pos())
+#        if child and child.objectName() == "spacer":
+#            self.setLineEditVisible(True)
+#        return QtGui.QComboBox.mouseDoubleClickEvent(self, event)
 
     def updateToolBarGeometry(self):
         self.toolBar.setGeometry(self.lineEdit().geometry())
 
+
+class QuickTreeItem(QtGui.QTreeWidgetItem):
+
+    def __init__(self, *args, **kwargs):
+
+        flags = kwargs.pop("flags", None)
+        roles = kwargs.pop("roles", None)
+
+        super(QuickTreeItem, self).__init__(*args, **kwargs)
+
+        treeWidget = self.treeWidget()
+        flags = flags if flags is not None else treeWidget.defaultFlags
+        if flags is not None:
+            self.setFlags(flags)
+
+        defaultRoles = treeWidget.defaultRoles
+        if roles is None:
+            roles = defaultRoles.copy()
+        elif defaultRoles:
+            roles.update((k, v) for k, v in defaultRoles.iteritems() if k not in roles)
+
+        if roles:
+            for role, args in roles.iteritems():
+                column, value = args
+                if isIterable(column):
+                    for c in column:
+                        self.setData(c, role, value)
+                else:
+                    self.setData(column, role, value)
 
 class QuickTreeItemDelegate(QtGui.QStyledItemDelegate):
 

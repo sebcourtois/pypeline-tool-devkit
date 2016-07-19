@@ -203,8 +203,11 @@ class PropertyItem(QtGui.QStandardItem):
 
     @setWaitCursor
     def loadChildren(self):
-        #print "***********************", getCaller(), self, "loadChildren"
-        self.loadImage()
+        
+        image = self.data(ItemUserRole.ImageRole)
+        if not image:
+            self.loadImage()
+            
         self._metaobj.loadChildren()
 
     def iterChildItems(self):

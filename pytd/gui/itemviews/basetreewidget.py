@@ -127,12 +127,6 @@ class BaseTreeWidget(QtGui.QWidget):
     def refresh(self):
         self.treeView.model().refresh()
 
-    def wasAnItemPressed(self):
-
-        ret = self.treeView.wasAnItemPressed()
-#        print self, "wasAnItemPressed", ret
-        return ret
-
     def updateTableHScrollRange(self, iMin , iMax):
         self.tableHScrollBar.setMinimum(self.dataView.columnWidth(0))
 

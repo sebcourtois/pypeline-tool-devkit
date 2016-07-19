@@ -236,7 +236,9 @@ class BaseTreeView(QtGui.QTreeView):
 
     def selectIndex(self, *indexes, **kwargs):
 
-        bReplace = kwargs.get("replace", kwargs.get("r", True))
+        bReplace = kwargs.pop("replace", kwargs.pop("r", True))
+        bScrollTo = kwargs.pop("scrollTo", True)
+        scrollHint = kwargs.pop("scrollHint", QtGui.QAbstractItemView.PositionAtCenter)
 
         count = len(indexes)
         if count > 1:
@@ -272,19 +274,12 @@ class BaseTreeView(QtGui.QTreeView):
 
         if selection:
 
-            currentIndex = self.mappedIdx(indexes[-1])
+            currIndex = self.mappedIdx(indexes[-1])
 
             curntSelModel.select(selection, QtGui.QItemSelectionModel.Select | QtGui.QItemSelectionModel.Rows)
-            curntSelModel.setCurrentIndex(currentIndex, QtGui.QItemSelectionModel.Current)
-
-    def selectLeaf(self, *leafList , **kwargs):
-
-        model = self.model()
-
-        indexes = tuple(model.indexForLeaf(leaf) for leaf in leafList if (leaf.isInTree() and (leaf != model.root)))
-
-        self.selectIndex(*indexes, **kwargs)
-
+            curntSelModel.setCurrentIndex(currIndex, QtGui.QItemSelectionModel.Current)
+            if bScrollTo:
+                self.scrollTo(currIndex, scrollHint)
 
     def recursiveExpand(self, index):
 
@@ -366,24 +361,12 @@ class BaseTreeView(QtGui.QTreeView):
             self.setIconSize(QtCore.QSize(height, height))
         self.itemHeight = height
 
-    def wasAnItemPressed(self):
-
-        selModel = self.selectionModel()
-        if selModel:
-            ret = selModel.itemPressed
-            selModel.itemPressed = False
-
-            return ret
-
-        return False
-
     def sourceModel(self):
         viewModel = self.model()
         if isinstance(viewModel, QtGui.QSortFilterProxyModel):
             return viewModel.sourceModel()
         else:
             return viewModel
-
 
     def __repr__(self):
 
