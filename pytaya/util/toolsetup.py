@@ -1,8 +1,11 @@
 
 import sys
+import traceback
 from functools import partial
 import logging
 
+
+from maya.api import OpenMaya as om
 import pymel.core; pm = pymel.core
 
 from pytd.util import logutils
@@ -14,15 +17,13 @@ from pytd.util.logutils import logMsg
 def catchJobException(func):
 
     def doIt(*args, **kwargs):
-
         try:
             ret = func(*args, **kwargs)
-        except Exception, e:
-            pm.displayError('< {0}.{1} > {2}.'.format(func.__module__, func.__name__, str(e)))
+        except Exception as e:
+            pm.displayError(e.message)
+            traceback.print_exc()
             return
-
         return ret
-
     return doIt
 
 
@@ -62,6 +63,7 @@ class ToolSetup(object):
         self.sceneOpenedJobId = None
         self.preNewOrOpenedJobId = None
         self.sceneSavedJobId = None
+        self.preCreateRefCheckCbkId = None
 
     def setLogLevel(self, *args):
 
@@ -108,6 +110,10 @@ class ToolSetup(object):
     def onSceneSaved(self):
         logMsg("Scene Saved", log="callback")
 
+    def onPreCreateReferenceCheck(self, mFileObj, clientData=None):
+        logMsg("Before Create Reference Check", log="callback")
+        return True
+
     def startScriptJobs(self):
 
         if pm.about(batch=True):
@@ -145,7 +151,9 @@ class ToolSetup(object):
                                                    cu=True, kws=False)
         logMsg("SceneSaved Job Started.")
 
-        #pm.scriptJob( event = ( "DagObjectCreated", fncUtil.fillTypeLists ), runOnce = True )
+        args = (om.MSceneMessage.kBeforeCreateReferenceCheck, self.onPreCreateReferenceCheck)
+        self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
+        logMsg("PreCreateReferenceCheck Callback Started.")
 
     def killScriptJobs(self):
 
@@ -169,6 +177,10 @@ class ToolSetup(object):
 
         self.sceneSavedJobId = pm.scriptJob(kill=self.sceneSavedJobId, force=True)
         logMsg("SceneSaved Job Killed.")
+
+        if self.preCreateRefCheckCbkId:
+            self.preCreateRefCheckCbkId = om.MSceneMessage.removeCallback(self.preCreateRefCheckCbkId)
+            logMsg("PreCreateReferenceCheck Callback Killed.")
 
     def beforeBuildingMenu(self):
 
