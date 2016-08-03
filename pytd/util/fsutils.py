@@ -59,20 +59,27 @@ def pathSuffixed(sFileNameOrPath, *suffixes):
 def pathRelativeTo(*args):
     return pathNorm(osp.relpath(*args))
 
-def pathParse(sPathFormat, sPath):
+def pathParse(sPathFormat, sPath, log=False):
 
     fmtDirs = pathSplitDirs(sPathFormat)
-    pDirs = pathSplitDirs(sPath)
+    pathDirs = pathSplitDirs(sPath)
 
-    fmtLen = len(fmtDirs)
-    pLen = len(pDirs)
+    numFmtDirs = len(fmtDirs)
+    numPathDirs = len(pathDirs)
 
-    minLen = min(fmtLen, pLen)
+    minLen = min(numFmtDirs, numPathDirs)
 
     fmt = pathJoin(*fmtDirs[1:minLen])
-    s = pathJoin(*pDirs[1:minLen])
+    s = pathJoin(*pathDirs[1:minLen])
 
-    return parse.parse(fmt, s)
+    res = parse.parse(fmt, s)
+
+    if log:
+        print "\n", fmt, sPathFormat
+        print s, sPath
+        print res
+
+    return res
 
 def pathReSub(pattern, repl, string, count=0, flags=0):
 
