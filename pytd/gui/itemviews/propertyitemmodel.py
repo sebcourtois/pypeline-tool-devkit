@@ -169,7 +169,7 @@ class PropertyItem(QtGui.QStandardItem):
             bSuccess = False
             try:
                 value = self._metaprpty.castFromUi(value)
-                bSuccess = metaobj.setPrpty(self.propertyName, value, warn=False)
+                bSuccess = metaobj.setPrpty(self.propertyName, value, warn=False, prompt=True)
             except Exception, err:
                 sMsg = u"Could not set {}.{}:\n\n".format(metaobj, self.propertyName)
                 confirmDialog(title='SORRY !',

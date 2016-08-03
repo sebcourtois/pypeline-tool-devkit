@@ -83,7 +83,8 @@ class MetaObject(object):
 
     def setPrpty(self, sProperty, value, write=True, **kwargs):
 
-        bUseSetter = kwargs.get("useSetter", True)
+        bUseSetter = kwargs.pop("useSetter", True)
+        bWarn = kwargs.get("warn", True)
         sMsg = ""
 
         setter = None
@@ -99,12 +100,11 @@ class MetaObject(object):
         bSuccess = False
 
         if setter:
-
-            if kwargs.get("warn", True):
+            if bWarn:
                 logMsg("{}.{}() can be used to set '{}' property !"
                        .format(self, sSetter, sProperty), warning=True)
 
-            bSuccess = setter(value, write=write)
+            bSuccess = setter(value, write=write, **kwargs)
         else:
             bSuccess = self._setPrpty(sProperty, value, write=write)
 
