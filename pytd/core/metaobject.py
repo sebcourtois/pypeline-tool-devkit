@@ -83,13 +83,13 @@ class MetaObject(object):
 
     def setPrpty(self, sProperty, value, write=True, **kwargs):
 
-        bWithSetter = kwargs.get("withSetter", True)
+        bUseSetter = kwargs.get("useSetter", True)
         sMsg = ""
 
         setter = None
-        if bWithSetter:
-            sSetter = "set" + upperFirst(sProperty)
-            setter = getattr(self, sSetter, None)
+        if bUseSetter:
+            sSetter = self.metaProperty(sProperty).getParam("setter", "")
+            setter = getattr(self, sSetter) if sSetter else None
 
             sMsg = "Setting {0}.{1} to {2}( {3} ) using {4}".format(
                     self, sProperty, type(value).__name__, toStr(value),
@@ -104,10 +104,7 @@ class MetaObject(object):
                 logMsg("{}.{}() can be used to set '{}' property !"
                        .format(self, sSetter, sProperty), warning=True)
 
-            try:
-                bSuccess = setter(value, write=write)
-            except TypeError:
-                bSuccess = setter(value)
+            bSuccess = setter(value, write=write)
         else:
             bSuccess = self._setPrpty(sProperty, value, write=write)
 
@@ -183,7 +180,7 @@ class MetaObject(object):
             value = getattr(self, sProperty)
 
             try:
-                self.setPrpty(sProperty, value, write=True, withSetter=False)
+                self.setPrpty(sProperty, value, write=True, useSetter=False)
             except Exception, msg:
                 logMsg(toStr(msg), warning=True)
 
