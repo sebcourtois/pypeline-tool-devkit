@@ -277,20 +277,29 @@ def newScene(**kwargs):
 
 def openScene(sScenePath, **kwargs):
 
+    bAddToRecent = kwargs.pop("addToRecent", False)
+
     if kwargs.pop("noFileCheck", True):
         pmu.putEnv("DAVOS_FILE_CHECK", "")
 
     bFail = kwargs.pop("fail", True)
 
+    res = None
     try:
-        return pm.openFile(sScenePath, **kwargs)
+        res = pm.openFile(sScenePath, **kwargs)
     except RuntimeError, e:
         if bFail:
             raise
         else:
             pm.displayError(toStr(e.message))
 
-    return sScenePath
+    if bAddToRecent and (not mc.about(batch=True)):
+        try:
+            pm.mel.addRecentFile(sScenePath, mc.file(sScenePath, q=True, type=True)[0])
+        except Exception as e:
+            pm.displayWarning(toStr(e.message))
+
+    return sScenePath if res is None else res
 
 _toBool = lambda x: int(bool(int(x)))
 
