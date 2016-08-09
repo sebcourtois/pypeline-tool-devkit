@@ -22,8 +22,20 @@ def isDirStat(statobj):
 def isFileStat(statobj):
     return S_ISREG(statobj.st_mode)
 
-def pathNorm(p):
-    return osp.normpath(p).replace("\\", "/")
+def pathNorm(p, endSlash=True, case=False):
+    
+    if not endSlash:
+        bEndSlash = p.replace("\\", "/").endswith("/")
+        p = osp.normpath(p)
+        if bEndSlash:
+            p = addEndSlash(p)
+    else:
+        p = osp.normpath(p)
+
+    if case:
+        p = osp.normcase(p)
+
+    return p.replace("\\", "/")
 
 def normCase(p):
     return osp.normcase(p).replace("\\", "/")
@@ -41,7 +53,7 @@ def pathJoin(*args):
 
 def pathResolve(p, recursive=True):
 
-    rp = pathNorm(osp.expanduser(osp.expandvars(p)))
+    rp = osp.expanduser(osp.expandvars(p))
 
     if recursive and (rp != p) and re.findall(r'[%$]', rp):
         return pathResolve(rp)
@@ -81,6 +93,28 @@ def pathParse(sPathFormat, sPath, log=False):
         print res
 
     return res
+
+def pathRedir(sInPath, sFromDir, sToDir, fail=True):
+
+    sInPath = pathNorm(sInPath, endSlash=False)
+    sFromDir = pathNorm(sFromDir, endSlash=False)
+
+    if osp.normcase(sFromDir) == osp.normcase(sInPath):
+        return sToDir
+
+    sFromDir = addEndSlash(sFromDir)
+    sToDir = addEndSlash(pathNorm(sToDir, endSlash=False))
+
+    sOutPath = pathReSub('^' + re.escape(sFromDir), sToDir, sInPath)
+
+    if fail and osp.normcase(sInPath) == osp.normcase(sOutPath):
+        sMsg = "\n"
+        sMsg += "Failed to redirect '{}'\n".format(sInPath)
+        sMsg += "            from   '{}'\n".format(sFromDir)
+        sMsg += "            to     '{}'\n".format(sToDir)
+        raise ValueError(sMsg)
+
+    return sOutPath
 
 def pathReSub(pattern, repl, string, count=0, flags=0):
 
@@ -219,7 +253,8 @@ def iterPaths(sRootDirPath, **kwargs):
                 yield addEndSlash(p)
 
 def addEndSlash(p):
-    return p if p.endswith("/") else p + "/"
+    #return p if p.endswith("/") else p + "/"
+    return (p + "/") if p and (not p.replace("\\","/").endswith("/")) else p
 
 def delEndSlash(p):
     return p[:-1] if p.endswith("/") else p

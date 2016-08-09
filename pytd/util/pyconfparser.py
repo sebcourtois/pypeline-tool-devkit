@@ -4,7 +4,7 @@ import inspect as insp
 from copy import copy, deepcopy
 
 from pytd.util.sysutils import listClassesFromModule
-from pytd.util.fsutils import pathJoin
+from pytd.util.fsutils import pathJoin, addEndSlash
 from pytd.util.strutils import findFmtFields
 
 _SECTION_RGX = re.compile(r"{([\w]+)\.")
@@ -125,11 +125,14 @@ class PyConfParser(object):
 
                         setattr(pyobj, sConfVar + "_tokens", tokens)
 
+                    if isinstance(childDct, dict):
+                        sPath = addEndSlash(sPath)
+                    
                     setattr(pyobj, sConfVar, sPath)
 
-                    sPathVars = pyobj.__dict__.get("all_tree_vars", [])
-                    sPathVars.append(sConfVar)
-                    setattr(pyobj, "all_tree_vars", sPathVars)
+                    sPathVarList = pyobj.__dict__.get("all_tree_vars", [])
+                    sPathVarList.append(sConfVar)
+                    setattr(pyobj, "all_tree_vars", sPathVarList)
 
                 else:
                     msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sPath)
