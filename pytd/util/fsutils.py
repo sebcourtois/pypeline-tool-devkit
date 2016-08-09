@@ -22,9 +22,12 @@ def isDirStat(statobj):
 def isFileStat(statobj):
     return S_ISREG(statobj.st_mode)
 
-def pathNorm(p, endSlash=True, case=False):
+def pathEqual(p, p1):
+    return pathNorm(p, case=True) == pathNorm(p1, case=True)
+
+def pathNorm(p, case=False, keepEndSlash=False):
     
-    if not endSlash:
+    if keepEndSlash:
         bEndSlash = p.replace("\\", "/").endswith("/")
         p = osp.normpath(p)
         if bEndSlash:
@@ -96,18 +99,18 @@ def pathParse(sPathFormat, sPath, log=False):
 
 def pathRedir(sInPath, sFromDir, sToDir, fail=True):
 
-    sInPath = pathNorm(sInPath, endSlash=False)
-    sFromDir = pathNorm(sFromDir, endSlash=False)
+    sInPath = pathNorm(sInPath)
+    sFromDir = pathNorm(sFromDir)
 
     if osp.normcase(sFromDir) == osp.normcase(sInPath):
         return sToDir
 
     sFromDir = addEndSlash(sFromDir)
-    sToDir = addEndSlash(pathNorm(sToDir, endSlash=False))
+    sToDir = addEndSlash(pathNorm(sToDir))
 
     sOutPath = pathReSub('^' + re.escape(sFromDir), sToDir, sInPath)
 
-    if fail and osp.normcase(sInPath) == osp.normcase(sOutPath):
+    if fail and pathEqual(sInPath, sOutPath):
         sMsg = "\n"
         sMsg += "Failed to redirect '{}'\n".format(sInPath)
         sMsg += "            from   '{}'\n".format(sFromDir)
@@ -123,15 +126,30 @@ def pathReSub(pattern, repl, string, count=0, flags=0):
 
     return re.sub(pattern, repl, string, count, flags)
 
-def pathStartsWith(sPath, sParentPath):
+def pathStartsWith(p, sDirPath, pathSplits=None, log=False):
 
-    sParentPath = normCase(pathAbs(sParentPath))
-    sPathDirs = pathSplitDirs(normCase(pathAbs(sPath)))
+    if pathSplits:
+        sPathDirList = pathSplits
+    else:
+        sPathDirList = pathSplitDirs(pathNorm(p, case=True))
 
-    numDirs = len(pathSplitDirs(sParentPath))
-    sAlignedPath = pathJoin(*sPathDirs[:numDirs])
+    sDirPath = addEndSlash(pathNorm(sDirPath, case=True))
 
-    return sAlignedPath == sParentPath
+    numDirs = len(pathSplitDirs(sDirPath))
+    if numDirs > len(sPathDirList):
+        sAlignedPath = p
+        bSubDir = False
+    else:
+        sAlignedPath = addEndSlash(pathJoin(*sPathDirList[:numDirs]))
+        bSubDir = (sAlignedPath == sDirPath)
+
+    if log:
+        print "\n", p
+        print sAlignedPath
+        print sDirPath
+        print bSubDir
+
+    return bSubDir
 
 def pathStripDrive(p):
     return pathJoin(*pathSplitDirs(p)[1:])
@@ -441,7 +459,7 @@ def sameFile(sSrcPath, sDestPath):
             return False
 
     # All other platforms: check for same pathname.
-    return (osp.normcase(osp.abspath(sSrcPath)) == osp.normcase(osp.abspath(sDestPath)))
+    return pathEqual(osp.abspath(sSrcPath), osp.abspath(sDestPath))
 
 def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
 
