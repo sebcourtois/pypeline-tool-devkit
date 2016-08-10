@@ -52,7 +52,7 @@ def pathJoin(*args):
     except UnicodeDecodeError:
         p = osp.join(*tuple(toUnicode(arg) for arg in args))
 
-    return pathNorm(p)
+    return pathNorm(p, case=False, keepEndSlash=True)
 
 def pathResolve(p, recursive=True):
 
