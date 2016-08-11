@@ -292,7 +292,7 @@ class MetaObject(object):
 
         return None, True
 
-    def displayViewItems(self):
+    def displayModelRow(self):
         return True
 
     @classmethod

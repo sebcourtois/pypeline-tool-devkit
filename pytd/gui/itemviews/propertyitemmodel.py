@@ -375,7 +375,7 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
     def loadRow(self, metaobj, parentItem):
 
-        if not metaobj.displayViewItems():
+        if not metaobj.displayModelRow():
             return ()
 
         itemCls = self.__class__.standardItemClass
@@ -414,7 +414,7 @@ class PropertyItemModel(QtGui.QStandardItemModel):
 
         for metaobj in metaobjList:
 
-            if not metaobj.displayViewItems():
+            if not metaobj.displayModelRow():
                 #yield tuple()
                 continue
 
