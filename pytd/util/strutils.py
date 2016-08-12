@@ -145,5 +145,5 @@ def assertChars(sWord, sRegexp):
 
     if sErrorMsg:
         sErrorMsg = 'Invalid string: "{0}"\n'.format(toStr(sWord)) + sErrorMsg
-        raise AssertionError, sErrorMsg
+        raise ValueError(sErrorMsg)
 
