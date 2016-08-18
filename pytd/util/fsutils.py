@@ -99,13 +99,12 @@ def pathParse(sPathFormat, sPath, log=False):
 
 def pathRedir(sInPath, sFromDir, sToDir, fail=True):
 
-    sInPath = pathNorm(sInPath)
-    sFromDir = pathNorm(sFromDir)
+    if pathEqual(sFromDir, sInPath):
+        return pathNorm(sToDir, keepEndSlash=True)
 
-    if osp.normcase(sFromDir) == osp.normcase(sInPath):
-        return sToDir
+    sInPath = pathNorm(sInPath, keepEndSlash=True)
 
-    sFromDir = addEndSlash(sFromDir)
+    sFromDir = addEndSlash(pathNorm(sFromDir))
     sToDir = addEndSlash(pathNorm(sToDir))
 
     sOutPath = pathReSub('^' + re.escape(sFromDir), sToDir, sInPath)
