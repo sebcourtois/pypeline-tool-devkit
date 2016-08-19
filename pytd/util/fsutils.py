@@ -211,6 +211,8 @@ def iterPaths(sRootDirPath, **kwargs):
 
     for sDirPath, sDirNames, sFileNames in os.walk(sRootDirPath):
 
+        sDirPath = sDirPath.replace("\\", "/")
+
         if not bRecursive:
             del sDirNames[:] # don't walk further
 
@@ -251,7 +253,6 @@ def iterPaths(sRootDirPath, **kwargs):
                 yield p if not bRelPath else pathRelativeTo(p, sRootDirPath)
 
         if bDirs:
-
             p = pathNorm(sDirPath)
             if bRelPath:
                 p = pathRelativeTo(p, sRootDirPath)
