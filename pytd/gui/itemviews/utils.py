@@ -7,7 +7,7 @@ from PySide.QtCore import Qt, SIGNAL
 from PySide import QtGui
 
 from pytd.util.sysutils import toUnicode
-from pytd.util.utiltypes import MemSize
+from pytd.util.systypes import MemSize
 from pytd.util.sysutils import isIterable
 from pytd.gui.dialogs import confirmDialog
 

@@ -1,25 +1,26 @@
 
 
 import os
-import os.path as osp
 import re
 import fnmatch
 import json
-import stat
 import hashlib
+from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG
 
 from distutils.file_util import copy_file
 
 from .external import parse
 from .sysutils import toUnicode, argToList
 from .logutils import logMsg
+from .systypes import MemSize
 
+osp = os.path
 
 def isDirStat(statobj):
-    return stat.S_ISDIR(statobj.st_mode)
+    return S_ISDIR(statobj.st_mode)
 
 def isFileStat(statobj):
-    return stat.S_ISREG(statobj.st_mode)
+    return S_ISREG(statobj.st_mode)
 
 def pathNorm(p):
     return osp.normpath(p).replace("\\", "/")
@@ -222,20 +223,173 @@ def commonDir(sPathList):
     sDir = osp.commonprefix(sPathList)
     return sDir if (sDir[-1] in ("\\", "/")) else (osp.dirname(sDir) + "/")
 
-def copyFile(sSrcPath, sDestPath, **kwargs):
+def copyFileOld(sSrcPath, sDstPath, **kwargs):
 
-    if osp.isdir(sDestPath):
-        sDestPath = pathJoin(sDestPath, osp.basename(sSrcPath))
+    if osp.isdir(sDstPath):
+        sDstPath = pathJoin(sDstPath, osp.basename(sSrcPath))
 
-    if sameFile(sSrcPath, sDestPath):
+    if sameFile(sSrcPath, sDstPath):
         sMsg = u"Source and destination files are the same:"
         sMsg += u"\n    source:      ", sSrcPath
-        sMsg += u"\n    destination: ", sDestPath
+        sMsg += u"\n    destination: ", sDstPath
         raise EnvironmentError(sMsg)
 
-    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcPath, sDestPath))
+    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcPath, sDstPath))
 
-    return copy_file(sSrcPath, sDestPath, **kwargs)
+    return copy_file(sSrcPath, sDstPath, **kwargs)
+
+_copy_action = {
+'': 'copying',
+'hard': 'hard linking',
+'symb': 'symbolically linking'}
+
+def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_place=False,
+             update=False, link="", verbose=1, dry_run=False, buffer_size=64 * 1024):
+    """Copy a file 'sSrcPath' to 'sDstPath'. (Stolen and updated from distutils.file_util)
+
+    If 'sDstPath' is a directory, then 'sSrcPath' is copied there with the same name;
+    otherwise, it must be a filename.  (If the file exists, it will be
+    ruthlessly clobbered.)  If 'preserve_mode' is true (the default),
+    the file's mode (type and permission bits, or whatever is analogous on
+    the current platform) is copied.  If 'preserve_times' is true (the
+    default), the last-modified and last-access times are copied as well.
+    If 'update' is true, 'sSrcPath' will only be copied if 'sDstPath' does not exist,
+    or if 'sDstPath' does exist but is older than 'sSrcPath'.
+
+    'link' allows you to make hard links (os.link) or symbolic links
+    (os.symlink) instead of copying: set it to "hard" or "sym"; if it is
+    None (the default), files are copied.  Don't set 'link' on systems that
+    don't support it: 'copy_file()' doesn't check if hard or symbolic
+    linking is available.
+
+    Under Mac OS, uses the native file copy function in macostools; on
+    other systems, uses '_copy_file_contents()' to copy file contents.
+
+    Return a tuple (dest_name, copied): 'dest_name' is the actual name of
+    the output file, and 'copied' is true if the file was copied (or would
+    have been copied, if 'dry_run' true).
+    """
+    # XXX if the destination file already exists, we clobber it if
+    # copying, but blow up if linking.  Hmmm.  And I don't know what
+    # macostools.copyfile() does.  Should definitely be consistent, and
+    # should probably blow up if destination exists and we would be
+    # changing it (ie. it's not already a hard/soft link to sSrcPath OR
+    # (not update) and (sSrcPath newer than sDstPath).
+
+    try:
+        sAction = _copy_action[link].capitalize()
+    except KeyError:
+        raise ValueError(u"Invalid value for 'link' argument: '{}'. Expected one of {}."
+                         .format(link, _copy_action.keys()))
+
+    srcStat = os.stat(sSrcPath)
+    if not S_ISREG(srcStat.st_mode):
+        raise EnvironmentError(u"Source file NOT found: '{}'.".format(sSrcPath))
+
+    if osp.isdir(sDstPath):
+        sDirPath = sDstPath
+        sDstPath = osp.join(sDstPath, osp.basename(sSrcPath))
+    else:
+        sDirPath = osp.dirname(sDstPath)
+
+    if update and (not pathNewer(sSrcPath, sDstPath)):
+        if verbose >= 1:
+            logMsg(u"Not copying (output up-to-date): '{}'".format(sSrcPath), log="debug")
+        return sDstPath, False
+
+    if verbose >= 1:
+        if osp.basename(sDstPath) == osp.basename(sSrcPath):
+            logMsg(u"\n{} '{}'\n     -> '{}'".format(sAction, sSrcPath, sDirPath))
+        else:
+            logMsg(u"\n{} '{}'\n     -> '{}'".format(sAction, sSrcPath, sDstPath))
+
+    if dry_run:
+        return (sDstPath, True)
+
+    # If linking (hard or symbolic), use the appropriate system call
+    # (Unix only, of course, but that's the caller's responsibility)
+    if link == 'hard':
+        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
+            os.link(sSrcPath, sDstPath)
+    elif link == 'symb':
+        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
+            os.symlink(sSrcPath, sDstPath)
+
+    # Otherwise (non-Mac, not linking), copy the file contents and
+    # (optionally) copy the times and mode.
+    else:
+        if sameFile(sSrcPath, sDstPath):
+            sMsg = u"Source and destination files are the same:"
+            sMsg += u"\n    source:      ", sSrcPath
+            sMsg += u"\n    destination: ", sDstPath
+            raise EnvironmentError(sMsg)
+
+        sTmpPath = ""
+        try:
+            dstStat = os.stat(sDstPath)
+        except OSError:
+            pass
+        else:# destination  path exists
+            if not S_ISREG(dstStat.st_mode):
+                raise EnvironmentError(u"Path already exists but NOT a regular file: '{}'."
+                                       .format(sDstPath))
+            if not in_place:
+                os.rename(sDstPath, sDstPath)#checks if the file can be deleted/renamed afterwards
+                sTmpPath = sDstPath + ".tmpcopy"
+
+        sCopyPath = sTmpPath if sTmpPath else sDstPath
+        try:
+            with open(sSrcPath, 'rb') as srcFobj:
+                with open(sCopyPath, 'wb') as dstFobj:
+                    while True:
+                        buf = srcFobj.read(buffer_size)
+                        if not buf:
+                            break
+                        dstFobj.write(buf)
+
+            dstStat = os.stat(sCopyPath)
+            if dstStat.st_size != srcStat.st_size:
+                srcSize = MemSize(srcStat.st_size)
+                dstSize = MemSize(dstStat.st_size)
+                raise IOError(u"Incomplete copy: {:.1cM}/{:.1cM} copied."
+                              .format(dstSize, srcSize))
+
+            if preserve_mode or preserve_times:
+                # According to David Ascher <da@ski.org>, utime() should be done
+                # before chmod() (at least under NT).
+                if preserve_times:
+                    os.utime(sCopyPath, (srcStat[ST_ATIME], srcStat[ST_MTIME]))
+                if preserve_mode:
+                    os.chmod(sCopyPath, S_IMODE(srcStat[ST_MODE]))
+
+            if sTmpPath:
+                if os.name == "nt": # on windows, destination must be removed first
+                    os.remove(sDstPath)
+                os.rename(sTmpPath, sDstPath)
+        finally:
+            if sTmpPath and osp.exists(sTmpPath):
+                os.remove(sTmpPath)
+
+    return (sDstPath, True)
+
+def pathNewer(sSrcPath, sDstPath):
+    """Tells if the sDstPath is newer than the sSrcPath.
+
+    Return true if 'sSrcPath' exists and is more recently modified than
+    'sDstPath', or if 'sSrcPath' exists and 'sDstPath' doesn't.
+
+    Return false if both exist and 'sDstPath' is the same age or younger
+    than 'sSrcPath'. Raise DistutilsFileError if 'sSrcPath' does not exist.
+
+    Note that this test is not very accurate: files created in the same second
+    will have the same "age".
+    """
+    if not osp.exists(sSrcPath):
+        raise EnvironmentError(u"No such file: '{}'.".format(osp.abspath(sSrcPath)))
+    if not osp.exists(sDstPath):
+        return True
+
+    return os.stat(sSrcPath)[ST_MTIME] > os.stat(sDstPath)[ST_MTIME]
 
 def sameFile(sSrcPath, sDestPath):
     # Macintosh, Unix.
