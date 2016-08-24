@@ -334,7 +334,11 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
                 raise EnvironmentError(u"Path already exists but NOT a regular file: '{}'."
                                        .format(sDstPath))
             if not in_place:
-                os.rename(sDstPath, sDstPath)#checks if the file can be deleted/renamed afterwards
+                try:
+                    os.rename(sDstPath, sDstPath)#checks if the file can be deleted/renamed afterwards
+                except WindowsError as e:
+                    raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sDstPath)))
+
                 sTmpPath = sDstPath + ".tmpcopy"
 
         sCopyPath = sTmpPath if sTmpPath else sDstPath
@@ -363,7 +367,7 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
                     os.chmod(sCopyPath, S_IMODE(srcStat[ST_MODE]))
 
             if sTmpPath:
-                if os.name == "nt": # on windows, destination must be removed first
+                if os.name == "nt": # on nt platform, destination must be removed first
                     os.remove(sDstPath)
                 os.rename(sTmpPath, sDstPath)
         finally:
