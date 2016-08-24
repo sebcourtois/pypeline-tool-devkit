@@ -122,6 +122,11 @@ def pathSplitDirs(p):
 
     return res
 
+def pathRename(sSrcPath, sDstPath):
+    try:
+        os.rename(sSrcPath, sDstPath)
+    except WindowsError as e:
+        raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sSrcPath)))
 
 def ignorePatterns(*patterns):
     """Function that can be used as iterPaths() ignore parameters.
@@ -334,11 +339,7 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
                 raise EnvironmentError(u"Path already exists but NOT a regular file: '{}'."
                                        .format(sDstPath))
             if not in_place:
-                try:
-                    os.rename(sDstPath, sDstPath)#checks if the file can be deleted/renamed afterwards
-                except WindowsError as e:
-                    raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sDstPath)))
-
+                pathRename(sDstPath, sDstPath)
                 sTmpPath = sDstPath + ".tmpcopy"
 
         sCopyPath = sTmpPath if sTmpPath else sDstPath
@@ -369,7 +370,8 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
             if sTmpPath:
                 if os.name == "nt": # on nt platform, destination must be removed first
                     os.remove(sDstPath)
-                os.rename(sTmpPath, sDstPath)
+                pathRename(sTmpPath, sDstPath)
+
         finally:
             if sTmpPath and osp.exists(sTmpPath):
                 os.remove(sTmpPath)
