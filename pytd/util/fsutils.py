@@ -5,7 +5,9 @@ import re
 import fnmatch
 import json
 import hashlib
+import codecs
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG
+
 
 from distutils.file_util import copy_file
 
@@ -13,6 +15,7 @@ from .external import parse
 from .sysutils import toUnicode, argToList
 from .logutils import logMsg
 from .systypes import MemSize
+from pytd.util.sysutils import SYSTEM_ENCODING, hostApp
 
 osp = os.path
 
@@ -73,7 +76,7 @@ def pathSuffixed(sFileNameOrPath, *suffixes):
     return "".join(sJoinList) + sExt
 
 def pathRelativeTo(*args):
-    return pathNorm(osp.relpath(*args))
+    return pathNorm(osp.relpath(*args), keepEndSlash=True)
 
 def pathParse(sPathFormat, sPath, log=False):
 
@@ -177,7 +180,10 @@ def pathRename(sSrcPath, sDstPath):
     try:
         os.rename(sSrcPath, sDstPath)
     except WindowsError as e:
-        raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sSrcPath)))
+        if hostApp() == "maya!":
+            raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sSrcPath)))
+        else:
+            raise WindowsError(e.args[0], "{}: {}".format(e.strerror , sSrcPath))
 
 def ignorePatterns(*patterns):
     """Function that can be used as iterPaths() ignore parameters.
@@ -191,10 +197,10 @@ def ignorePatterns(*patterns):
         return set(ignored_names)
     return _ignore_patterns
 
-def iterPaths(sRootDirPath, **kwargs):
+def iterPaths(sStartDirPath, **kwargs):
 
-    if not osp.isdir(sRootDirPath):
-        raise ValueError('No such directory found: "{0}"'.format(sRootDirPath))
+    if not osp.isdir(sStartDirPath):
+        raise ValueError('No such directory found: "{0}"'.format(sStartDirPath))
 
     bFiles = kwargs.pop("files", True)
     bDirs = kwargs.pop("dirs", True)
@@ -209,7 +215,7 @@ def iterPaths(sRootDirPath, **kwargs):
 
     onlyFilesFunc = kwargs.get("onlyFiles", None)
 
-    for sDirPath, sDirNames, sFileNames in os.walk(sRootDirPath):
+    for sDirPath, sDirNames, sFileNames in os.walk(sStartDirPath):
 
         sDirPath = sDirPath.replace("\\", "/")
 
@@ -250,12 +256,12 @@ def iterPaths(sRootDirPath, **kwargs):
 
             if bFiles:
                 p = pathJoin(sDirPath, sFileName)
-                yield p if not bRelPath else pathRelativeTo(p, sRootDirPath)
+                yield p if not bRelPath else pathRelativeTo(p, sStartDirPath)
 
         if bDirs:
             p = pathNorm(sDirPath)
             if bRelPath:
-                p = pathRelativeTo(p, sRootDirPath)
+                p = pathRelativeTo(p, sStartDirPath)
 
             bYieldDir = True
             if p == ".":
@@ -280,21 +286,6 @@ def delEndSlash(p):
 def commonDir(sPathList):
     sDir = osp.commonprefix(sPathList)
     return sDir if (sDir[-1] in ("\\", "/")) else (osp.dirname(sDir) + "/")
-
-def copyFileOld(sSrcPath, sDstPath, **kwargs):
-
-    if osp.isdir(sDstPath):
-        sDstPath = pathJoin(sDstPath, osp.basename(sSrcPath))
-
-    if sameFile(sSrcPath, sDstPath):
-        sMsg = u"Source and destination files are the same:"
-        sMsg += u"\n    source:      ", sSrcPath
-        sMsg += u"\n    destination: ", sDstPath
-        raise EnvironmentError(sMsg)
-
-    logMsg(u"\nCopying '{}'\n     to '{}'".format(sSrcPath, sDstPath))
-
-    return copy_file(sSrcPath, sDstPath, **kwargs)
 
 _copy_action = {
 '': 'copying',
@@ -606,30 +597,31 @@ def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
 
     return sCopiedFileList
 
-def jsonWrite(sFile, pyobj, **kwargs):
+def jsonWrite(p, pyobj, ensure_ascii=False, indent=2, encoding=SYSTEM_ENCODING, **kwargs):
 
-    with open(sFile, mode='wb') as fp:
-        json.dump(pyobj, fp, indent=2, encoding='utf-8', **kwargs)
+    with codecs.open(p, 'wb', 'utf_8') as fileobj:
+        json.dump(pyobj, fileobj, ensure_ascii=ensure_ascii,
+                  indent=indent, encoding=encoding, **kwargs)
 
-def jsonRead(sFile):
+def jsonRead(p, **kwargs):
 
-    if not osp.isfile(sFile):
-        raise EnvironmentError("No such file: '{}'".format(sFile))
+    if not osp.isfile(p):
+        raise EnvironmentError("No such file: '{}'".format(p))
 
-    with open(sFile, 'rb') as fp:
-        pyobj = json.load(fp, encoding='utf-8')
+    with open(p, 'rb') as fileobj:
+        pyobj = json.load(fileobj, **kwargs)
 
     return pyobj
 
 def sha1HashFile(sFilePath, chunk_size=16 * 1024):
 
-    with open(sFilePath, "rb") as fp:
+    with open(sFilePath, "rb") as fileobj:
 
         h = hashlib.sha1()
 
         while True:
 
-            chunk = fp.read(chunk_size)
+            chunk = fileobj.read(chunk_size)
             if not chunk:
                 break
 
@@ -651,4 +643,19 @@ def topmostFoundDir(sPath):
 
     return sTestPath
 
+def parseDirContent(sStartDirPath):
 
+    sAllDirList = []
+    sAllFileList = []
+    for sDirPath, sDirList, sFileList in os.walk(sStartDirPath):
+
+        sDirPath = sDirPath.replace("\\", "/")
+
+        sAllDirList.extend(pathRelativeTo(pathJoin(sDirPath, s), sStartDirPath) for s in sDirList)
+        sAllFileList.extend(pathRelativeTo(pathJoin(sDirPath, s), sStartDirPath) for s in sFileList)
+
+    iDirSize = MemSize(sum(osp.getsize(pathJoin(sStartDirPath, p)) for p in sAllFileList))
+
+    return {"dir_size":iDirSize,
+            "dir_subfiles":sAllFileList,
+            "dir_subdirs":sAllDirList}

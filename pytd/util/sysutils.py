@@ -12,17 +12,26 @@ from functools import partial
 from importlib import import_module
 import locale
 import codecs
+from encodings import aliases
 import imp
 from modulefinder import ModuleFinder
 from itertools import islice
 
-LOCALE_ENCODING = locale.getlocale()[1]
-if not LOCALE_ENCODING:
+SYSTEM_ENCODING = locale.getlocale()[1]
+if not SYSTEM_ENCODING:
     locale.setlocale(locale.LC_ALL, '')
-    LOCALE_ENCODING = locale.getlocale()[1]
+    SYSTEM_ENCODING = locale.getlocale()[1]
 
-LOCALE_CODEC = codecs.lookup(LOCALE_ENCODING)
-UTF8_CODEC = codecs.lookup("utf-8")
+SYSTEM_CODEC = codecs.lookup(SYSTEM_ENCODING)
+UTF8_CODEC = codecs.lookup("utf_8")
+
+ALL_CODEC_ALIASES = {}
+for sAlias, sCodec in aliases.aliases.iteritems():
+    ALL_CODEC_ALIASES.setdefault(sCodec, []).append(sAlias)
+del sAlias, sCodec
+
+SYS_CODEC_ALIASES = [SYSTEM_ENCODING] + ALL_CODEC_ALIASES[SYSTEM_ENCODING]
+UTF8_CODEC_ALIASES = ["utf_8"] + ALL_CODEC_ALIASES["utf_8"]
 
 ''
 #===============================================================================
@@ -53,46 +62,47 @@ def timer(func):
 # Convertion
 #===============================================================================
 
-def toStr(value):
+def toStr(value, encoding=SYSTEM_ENCODING):
+
+    if isinstance(value, unicode):
+        if encoding in SYS_CODEC_ALIASES:
+            return SYSTEM_CODEC.encode(value)[0]
+        elif encoding in UTF8_CODEC_ALIASES:
+            return UTF8_CODEC.encode(value)[0]
+        else:
+            return value.encode(encoding)
+
+    if isinstance(value, Exception):
+        return toStr(value.args[-1])
 
     if isinstance(value, str):
         return value
-    elif isinstance(value, unicode):
-        value = LOCALE_CODEC.encode(value)[0]
-    elif isinstance(value, Exception):
-        return toStr(value.args[-1])
-    else:
-        try:
-            value = str(value)
-        except UnicodeEncodeError:
-            value = toStr(toUnicode(value))
 
-    return value
+    try:
+        return str(value)
+    except UnicodeEncodeError:
+        return toStr(toUnicode(value))
 
-def toUnicode(value):
+def toUnicode(value, encoding=SYSTEM_ENCODING):
+
+    if isinstance(value, str):
+        if encoding in SYS_CODEC_ALIASES:
+            return SYSTEM_CODEC.decode(value)[0]
+        elif encoding in UTF8_CODEC_ALIASES:
+            return UTF8_CODEC.decode(value)[0]
+        else:
+            return value.decode(encoding)
+
+    if isinstance(value, Exception):
+        return toUnicode(value.args[-1])
 
     if isinstance(value, unicode):
         return value
-    elif isinstance(value, str):
-        value = LOCALE_CODEC.decode(value)[0]
-    elif isinstance(value, Exception):
-        return toUnicode(value.args[-1])
-    else:
-        try:
-            value = unicode(value)
-        except UnicodeDecodeError:
-            value = unicode(value, LOCALE_ENCODING)
 
-    return value
-
-def toUtf8(value):
-
-    value = toUnicode(value)
-
-    if LOCALE_CODEC.name != UTF8_CODEC.name:
-        value, _ = UTF8_CODEC.encode(value)
-
-    return value
+    try:
+        return unicode(value)
+    except UnicodeDecodeError:
+        return unicode(value, SYSTEM_ENCODING)
 
 def fromUtf8(value):
 
@@ -230,24 +240,6 @@ def isOfType(pyObj, pyClassInfo , strict=False):
             return type(pyObj) is pyClassInfo
     else:
         return isinstance(pyObj, pyClassInfo)
-
-#def copyOf(value):
-#
-#    if isinstance(value, (tuple, list)):
-#        return value[:]
-#    elif isinstance(value, (dict, set)):
-#        return value.copy()
-#    else:
-#        return value
-#
-#def deepCopyOf(value):
-#
-#    if isinstance(value, (tuple, list)):
-#        return copy.deepcopy(value)
-#    elif isinstance(value, (dict, set)):
-#        return copy.deepcopy(value)
-#    else:
-#        return value
 
 def qtGuiApp():
     qApp = qtApp()

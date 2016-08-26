@@ -94,12 +94,13 @@ class PropertyItem(QtGui.QStandardItem):
     def _dataFromProperty(self, metaprpty):
 
         sDisplayText = toDisplayText(metaprpty.getattr_())
-        iSortValue = getattr(self._metaobj.__class__, "classUiPriority", 0)
         iFlags = int(self._flagsFromProperty(metaprpty))
 
-        itemData = {31:iFlags, Qt.DisplayRole:sDisplayText,
-                    ItemUserRole.GroupSortRole:iSortValue,
-                    }
+        itemData = {31:iFlags, Qt.DisplayRole:sDisplayText}
+
+        if self.column() == 0:
+            iGrpSort = self._metaobj.sortingGroupId()
+            itemData[ItemUserRole.GroupSortRole] = iGrpSort
 
         if metaprpty.getParam("uiDecorated", False):
 
@@ -120,7 +121,7 @@ class PropertyItem(QtGui.QStandardItem):
                     parentImage = parentItem.data(ItemUserRole.ImageRole)
                     #print "parentImage", parentItem, parentImage
                     if parentImage:
-                        itemData.update({ItemUserRole.ImageRole:parentImage})
+                        itemData[ItemUserRole.ImageRole] = parentImage
 
         return itemData
 
