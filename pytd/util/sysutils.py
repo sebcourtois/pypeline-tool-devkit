@@ -59,6 +59,8 @@ def toStr(value):
         return value
     elif isinstance(value, unicode):
         value = LOCALE_CODEC.encode(value)[0]
+    elif isinstance(value, Exception):
+        return toStr(value.args[-1])
     else:
         try:
             value = str(value)
@@ -73,6 +75,8 @@ def toUnicode(value):
         return value
     elif isinstance(value, str):
         value = LOCALE_CODEC.decode(value)[0]
+    elif isinstance(value, Exception):
+        return toUnicode(value.args[-1])
     else:
         try:
             value = unicode(value)
