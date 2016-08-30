@@ -2,6 +2,9 @@
 
 import math
 import string
+import locale
+
+THOUSAND_SEP = locale.localeconv()['thousands_sep']
 
 class MemSize(long):
     """ define a size class to allow custom formatting
@@ -15,13 +18,15 @@ class MemSize(long):
     """
     def __format__(self, fmt):
         # is it an empty format or not a special format for the size class
-        if fmt == "" or fmt[-2:].lower() not in ["em", "sm", "cm"]:
+        if fmt in ("", "n"):
+            return long(self).__format__('n' if THOUSAND_SEP else ',')
 
-            if fmt and fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'n', 'e', 'f', 'g', '%']:
-                # Numeric format.
+        elif fmt[-2:].lower() not in ["em", "sm", "cm"]:
+
+            if fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'e', 'f', 'g', '%']:
                 return long(self).__format__(fmt)
             else:
-                return str(self).__format__(fmt)
+                return long(self).__format__(',').__format__(fmt)
 
         # work out the scale, suffix and base
         factor, suffix = (8, "b") if fmt[-1] in string.lowercase[:26] else (1, "B")
@@ -45,3 +50,9 @@ class MemSize(long):
         t = ("{0:{1}f} " + mult[i] + suffix).format(v, precis)
 
         return "{0:{1}}".format(t, width) if width != "" else t
+
+    def __repr__(self):
+        try:
+            return '{:n} Bytes'.format(self)
+        except Exception:# as e:
+            return long.__repr__(self)

@@ -8,9 +8,6 @@ import hashlib
 import codecs
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG
 
-
-from distutils.file_util import copy_file
-
 from .external import parse
 from .sysutils import toUnicode, argToList
 from .logutils import logMsg
@@ -205,7 +202,7 @@ def iterPaths(sStartDirPath, **kwargs):
     bFiles = kwargs.pop("files", True)
     bDirs = kwargs.pop("dirs", True)
     bEmptyDirs = kwargs.pop("emptyDirs", True)
-    bInterDirs = kwargs.pop("intermediateDirs", False)
+    bInterDirs = kwargs.pop("intermediateDirs", kwargs.pop("intermeDirs", False))
     bRelPath = kwargs.pop("relative", False)
 
     bRecursive = kwargs.pop("recursive", True)
@@ -215,43 +212,46 @@ def iterPaths(sStartDirPath, **kwargs):
 
     onlyFilesFunc = kwargs.get("onlyFiles", None)
 
-    for sDirPath, sDirNames, sFileNames in os.walk(sStartDirPath):
+    iStartDepth = len(pathSplitDirs(sStartDirPath))
+    print iStartDepth
+    for sDirPath, sDirList, sFileList in os.walk(sStartDirPath):
 
         sDirPath = sDirPath.replace("\\", "/")
 
         if not bRecursive:
-            del sDirNames[:] # don't walk further
+            if len(pathSplitDirs(sDirPath)) > iStartDepth:
+                del sDirList[:] # don't walk further
 
         if ignoreDirsFunc is not None:
-            sIgnoredDirs = ignoreDirsFunc(sDirPath, sDirNames)
+            sIgnoredDirs = ignoreDirsFunc(sDirPath, sDirList)
             for sDir in sIgnoredDirs:
-                try: sDirNames.remove(sDir)
+                try: sDirList.remove(sDir)
                 except ValueError: pass
 
         bOnly = False
         sOnlyFiles = []
         if onlyFilesFunc is not None:
-            sOnlyFiles = onlyFilesFunc(sDirPath, sFileNames)
-            #print "sOnlyFiles", sOnlyFiles, sFileNames
+            sOnlyFiles = onlyFilesFunc(sDirPath, sFileList)
+            #print "sOnlyFiles", sOnlyFiles, sFileList
             bOnly = True
 
         sIgnoredFiles = []
         if ignoreFilesFunc is not None:
-            sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileNames)
+            sIgnoredFiles = ignoreFilesFunc(sDirPath, sFileList)
             #print "sIgnoredFiles", sIgnoredFiles
 
-        sKeptFileNames = sFileNames[:]
+        sKeptFileList = sFileList[:]
 
-        for sFileName in sFileNames:
+        for sFileName in sFileList:
 
             if bOnly and (sFileName not in sOnlyFiles):
                 if bEmptyDirs:
-                    sKeptFileNames.remove(sFileName)
+                    sKeptFileList.remove(sFileName)
                 continue
 
             if sFileName in sIgnoredFiles:
                 if bEmptyDirs:
-                    sKeptFileNames.remove(sFileName)
+                    sKeptFileList.remove(sFileName)
                 continue
 
             if bFiles:
@@ -267,8 +267,8 @@ def iterPaths(sStartDirPath, **kwargs):
             if p == ".":
                 bYieldDir = False
             elif not bInterDirs:
-                bIsLeaf = (not sDirNames)
-                bIsEmpty = bIsLeaf and (not sKeptFileNames)
+                bIsLeaf = (not sDirList)
+                bIsEmpty = bIsLeaf and (not sKeptFileList)
                 bYieldDir = bIsEmpty if bEmptyDirs else bIsLeaf
 
                 #print sDirPath, bIsLeaf, bIsEmpty
@@ -400,8 +400,7 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
             if dstStat.st_size != srcStat.st_size:
                 srcSize = MemSize(srcStat.st_size)
                 dstSize = MemSize(dstStat.st_size)
-                raise IOError(u"Incomplete copy: {:.1cM}/{:.1cM} copied."
-                              .format(dstSize, srcSize))
+                raise IOError("Incomplete copy: {}/{} bytes copied.".format(dstSize, srcSize))
 
             if preserve_mode or preserve_times:
                 # According to David Ascher <da@ski.org>, utime() should be done
@@ -643,19 +642,19 @@ def topmostFoundDir(sPath):
 
     return sTestPath
 
-def parseDirContent(sStartDirPath):
+def parseDirContent(sInDirPath):
 
     sAllDirList = []
     sAllFileList = []
-    for sDirPath, sDirList, sFileList in os.walk(sStartDirPath):
+    for sCurDirPath, sDirList, sFileList in os.walk(sInDirPath):
 
-        sDirPath = sDirPath.replace("\\", "/")
+        sCurDirPath = sCurDirPath.replace("\\", "/")
 
-        sAllDirList.extend(pathRelativeTo(pathJoin(sDirPath, s), sStartDirPath) for s in sDirList)
-        sAllFileList.extend(pathRelativeTo(pathJoin(sDirPath, s), sStartDirPath) for s in sFileList)
+        sAllDirList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath) for s in sDirList)
+        sAllFileList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath) for s in sFileList)
 
-    iDirSize = MemSize(sum(osp.getsize(pathJoin(sStartDirPath, p)) for p in sAllFileList))
+    dirSize = MemSize(sum(osp.getsize(pathJoin(sInDirPath, p)) for p in sAllFileList))
 
-    return {"dir_size":iDirSize,
+    return {"dir_size":dirSize,
             "dir_subfiles":sAllFileList,
             "dir_subdirs":sAllDirList}
