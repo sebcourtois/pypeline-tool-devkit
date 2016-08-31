@@ -65,12 +65,7 @@ def timer(func):
 def toStr(value, encoding=SYSTEM_ENCODING):
 
     if isinstance(value, unicode):
-        if encoding in SYS_CODEC_ALIASES:
-            return SYSTEM_CODEC.encode(value)[0]
-        elif encoding in UTF8_CODEC_ALIASES:
-            return UTF8_CODEC.encode(value)[0]
-        else:
-            return value.encode(encoding)
+        return str_(value, encoding)
 
     if isinstance(value, Exception):
         return toStr(value.args[-1])
@@ -83,15 +78,19 @@ def toStr(value, encoding=SYSTEM_ENCODING):
     except UnicodeEncodeError:
         return toStr(toUnicode(value))
 
+def str_(value, encoding=SYSTEM_ENCODING):
+
+    if encoding in SYS_CODEC_ALIASES:
+        return SYSTEM_CODEC.encode(value)[0]
+    elif encoding in UTF8_CODEC_ALIASES:
+        return UTF8_CODEC.encode(value)[0]
+    else:
+        return value.encode(encoding)
+
 def toUnicode(value, encoding=SYSTEM_ENCODING):
 
     if isinstance(value, str):
-        if encoding in SYS_CODEC_ALIASES:
-            return SYSTEM_CODEC.decode(value)[0]
-        elif encoding in UTF8_CODEC_ALIASES:
-            return UTF8_CODEC.decode(value)[0]
-        else:
-            return value.decode(encoding)
+        return unicode_(value, encoding)
 
     if isinstance(value, Exception):
         return toUnicode(value.args[-1])
@@ -103,6 +102,15 @@ def toUnicode(value, encoding=SYSTEM_ENCODING):
         return unicode(value)
     except UnicodeDecodeError:
         return unicode(value, SYSTEM_ENCODING)
+
+def unicode_(value, encoding=SYSTEM_ENCODING):
+
+    if encoding in SYS_CODEC_ALIASES:
+        return SYSTEM_CODEC.decode(value)[0]
+    elif encoding in UTF8_CODEC_ALIASES:
+        return UTF8_CODEC.decode(value)[0]
+    else:
+        return value.decode(encoding)
 
 def fromUtf8(value):
 
