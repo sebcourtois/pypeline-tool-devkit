@@ -1,6 +1,7 @@
 
 import functools
-import inspect as insp
+#import inspect as insp
+from fnmatch import fnmatch
 
 from PySide import QtGui, QtCore
 SelectionBehavior = QtGui.QAbstractItemView.SelectionBehavior
@@ -174,8 +175,7 @@ class BaseContextMenu(QtGui.QMenu):
 
     def iterAllowedActions(self, prptyItem):
 
-        cls = prptyItem._metaobj.__class__
-        sMroList = tuple(c.__name__ for c in insp.getmro(cls))
+        sTypeName = type(prptyItem._metaobj).__name__
         sCurApp = hostApp()
 
         for actionDct in self.createdActionConfigs:
@@ -189,12 +189,12 @@ class BaseContextMenu(QtGui.QMenu):
                 continue
 
             fnc = actionDct["fnc"]
-            allowedTypes = getattr(fnc, "auth_types", None)
-            if not allowedTypes:
+            sTargetTypeList = getattr(fnc, "act_on_types", None)
+            if not sTargetTypeList:
                 yield qAction
             else:
-                for sTypeName in sMroList:
-                    if sTypeName in allowedTypes:
+                for sPatrn in sTargetTypeList:
+                    if fnmatch(sTypeName, sPatrn):
                         yield qAction
                         break
 

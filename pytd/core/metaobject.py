@@ -364,7 +364,12 @@ class MetaObject(object):
 
         s = u'{'
         for k, v in self.iterDataItems(propertyNames):
-            s += u"\n'{}': {} | {}".format(k, v, type(v))
+            sValType = type(v).__name__
+            try:
+                s += u"\n<{}> {}: {}".format(sValType, k, v)
+            except:
+                print sValType, k, v
+                raise
         return (s + u'\n}')
 
     def __repr__(self):

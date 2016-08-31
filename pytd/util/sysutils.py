@@ -115,12 +115,10 @@ def toTimestamp(dateTime, timeZone="local"):
 
     if timeZone == "utc":
         #convert utc time back to utc timestamp
-        iUtcStamp = calendar.timegm(dateTime.timetuple())
+        return calendar.timegm(dateTime.timetuple())
     else:
         #convert local time back to utc timestamp
-        iUtcStamp = time.mktime(dateTime.timetuple())
-
-    return iUtcStamp
+        return time.mktime(dateTime.timetuple())
 
 def listForNone(arg):
     return [] if arg is None else arg

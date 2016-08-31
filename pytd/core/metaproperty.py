@@ -103,10 +103,11 @@ class MetaProperty(object):
 
         sAccessor = self.accessorName
         if not sAccessor:
-            logMsg("No accessor defined: '{}'".format(sAccessor), log='debug')
-            return False
+            newAccessor = self._metaobj
+            create = False
+        else:
+            newAccessor = getattr(self._metaobj, sAccessor)
 
-        newAccessor = getattr(self._metaobj, sAccessor)
         if newAccessor:
             if id(newAccessor) != id(curAccessor):
                 self.__readFunc = None

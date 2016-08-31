@@ -3,6 +3,7 @@
 import math
 import string
 import locale
+from pytd.util.sysutils import toUnicode
 
 THOUSAND_SEP = locale.localeconv()['thousands_sep']
 
@@ -19,10 +20,13 @@ class MemSize(long):
     def __format__(self, fmt):
         # is it an empty format or not a special format for the size class
         if fmt in ("", "n"):
-            return long(self).__format__('n' if THOUSAND_SEP else ',')
+            sSep = 'n' if THOUSAND_SEP else ','
+            if THOUSAND_SEP and isinstance(fmt, unicode):
+                return toUnicode(long(self).__format__(sSep))
+            else:
+                return long(self).__format__(sSep)
 
         elif fmt[-2:].lower() not in ["em", "sm", "cm"]:
-
             if fmt[-1].lower() in ['b', 'c', 'd', 'o', 'x', 'e', 'f', 'g', '%']:
                 return long(self).__format__(fmt)
             else:
