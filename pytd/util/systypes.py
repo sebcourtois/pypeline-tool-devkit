@@ -3,7 +3,7 @@
 import math
 import string
 import locale
-from pytd.util.sysutils import toUnicode
+from pytd.util.sysutils import unicode_
 
 THOUSAND_SEP = locale.localeconv()['thousands_sep']
 
@@ -22,7 +22,7 @@ class MemSize(long):
         if fmt in ("", "n"):
             sSep = 'n' if THOUSAND_SEP else ','
             if THOUSAND_SEP and isinstance(fmt, unicode):
-                return toUnicode(long(self).__format__(sSep))
+                return unicode_(long(self).__format__(sSep))
             else:
                 return long(self).__format__(sSep)
 
@@ -57,6 +57,6 @@ class MemSize(long):
 
     def __repr__(self):
         try:
-            return '{:n} Bytes'.format(self)
+            return '{:n}'.format(self)
         except Exception:# as e:
             return long.__repr__(self)

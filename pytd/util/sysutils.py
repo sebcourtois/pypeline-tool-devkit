@@ -33,6 +33,9 @@ del sAlias, sCodec
 SYS_CODEC_ALIASES = [SYSTEM_ENCODING] + ALL_CODEC_ALIASES[SYSTEM_ENCODING]
 UTF8_CODEC_ALIASES = ["utf_8"] + ALL_CODEC_ALIASES["utf_8"]
 
+SYS_EXEC_PREFIX = sys.exec_prefix.replace("\\", "/").rstrip("/") + "/"
+
+
 ''
 #===============================================================================
 # Decorators
@@ -362,7 +365,6 @@ def listClassesFromModule(sModuleName):
 
     return inspect.getmembers(sys.modules[sModuleName], partial(isClassOfModule, sModuleName))
 
-
 class TdModuleFinder(ModuleFinder):
 
     def __init__(self, path=None, debug=0, excludes=[], replace_paths=[], **kwargs):
@@ -380,17 +382,24 @@ class TdModuleFinder(ModuleFinder):
         m = ModuleFinder.load_module(self, fqname, fp, pathname, fileInfo)
 
         if iFileType in self.moduleTypes:
-            m.__file__ = os.path.normpath(m.__file__).replace("\\", "/")
-            self.loadedModules.append(m)
+            p = os.path.normpath(m.__file__).replace("\\", "/")
+            if not osp.normcase(p).startswith(osp.normcase(SYS_EXEC_PREFIX)):
+                m.__file__ = p
+                self.loadedModules.append(m)
 
         return m
 
-def reloadModule(m):
+def reloadModule(m=None, p=None):
 
-    if isinstance(m, basestring):
-        m = sys.modules[m]
+    if m:
+        if isinstance(m, basestring):
+            m = sys.modules[m]
+        sFile = m.__file__
+    elif p:
+        sFile = p
 
-    sFile = m.__file__[:-1] if m.__file__.endswith(".pyc") else m.__file__
+    if sFile.endswith(".pyc"):
+        sFile = sFile[:-1]
 
     excluded = [ "Crypto", "git", "async", "PyQt4", "PySide", "MySQLdb",
                 "pymel", "maya", "requests", "ecdsa", "paramiko", "shotgun_api3" ]
@@ -398,13 +407,16 @@ def reloadModule(m):
     finder = TdModuleFinder(debug=0, excludes=excluded)
     finder.load_file(sFile)
 
-    print "\nReloading '{0}':".format(m.__name__)
+    sReloaded = m.__name__ if m else p
+
+    print "\nReloading '{0}':".format(sReloaded)
     for lm in finder.loadedModules[:-1]:
         print "\t", lm.__name__
         if lm.__name__ in sys.modules:
             reload(sys.modules[lm.__name__])
 
-    print "\t", m.__name__
-    reload(m)
+    if m:
+        print "\t", sReloaded
+        reload(m)
 
 

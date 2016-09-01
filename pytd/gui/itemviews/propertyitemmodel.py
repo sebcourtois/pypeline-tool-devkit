@@ -14,6 +14,9 @@ from .utils import ItemUserRole
 from .utils import toDisplayText
 from pytd.gui.dialogs import confirmDialog
 
+
+ALL_EDITABLE = False
+
 class PropertyIconProvider(object):
 
     def __init__(self):
@@ -129,12 +132,12 @@ class PropertyItem(QtGui.QStandardItem):
 
         itemFlags = Qt.ItemFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
-        editableState = metaprpty.getParam("uiEditable", Eds.Disabled)
-        if editableState:
+        editMode = metaprpty.getParam("uiEditable", Eds.Disabled)
+        if editMode or ALL_EDITABLE:
             # #Allow edition of the column
             itemFlags = Qt.ItemFlags(Qt.ItemIsEditable | itemFlags)
 
-            if editableState == Eds.Multi:
+            if editMode == Eds.Multi:
                 itemFlags = Qt.ItemFlags(ItemUserFlag.MultiEditable | itemFlags)
 
         return itemFlags
