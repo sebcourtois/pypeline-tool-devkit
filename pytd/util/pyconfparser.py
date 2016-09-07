@@ -7,7 +7,7 @@ from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin, addEndSlash
 from pytd.util.strutils import findFmtFields
 
-_SECTION_RGX = re.compile(r"{([\w]+)\.")
+_SECTION_REXP = re.compile(r"{([\w]+)\.")
 
 def getattr_(pyobj, sAttr, *default):
 

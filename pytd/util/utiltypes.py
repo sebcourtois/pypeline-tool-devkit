@@ -45,3 +45,21 @@ class OrderedTree(OrderedDict):
                 children = nxtChilds
 
         return tree
+
+    def walk(self, parentPath="", rootPath=""):
+
+        for sChild, children in self.iteritems():
+
+            p = pathJoin(parentPath, sChild)
+
+            bYield = True
+            if rootPath:
+                rp = pathRelativeTo(p, rootPath)
+                if (rp == ".") or (".." in rp):
+                    bYield = False
+
+            if bYield:
+                yield p, children
+
+            for cp in children.walk(p, rootPath):
+                yield cp

@@ -2,9 +2,9 @@
 import re
 from pytd.util.sysutils import toStr
 
-_iterativePartRgx = re.compile('_\d+_(?=\D)|\d+$')
-_trailingNumRgx = re.compile('([0-9]+)$')
-_interBracketsRgx = re.compile(r'{([^{}]*?)}')
+_iterativePartRexp = re.compile('_\d+_(?=\D)|\d+$')
+_trailingNumRexp = re.compile('([0-9]+)$')
+_interBracketsRexp = re.compile(r'{([^{}]*?)}')
 
 #-------------------------------------------------------------------------------
 # strings manipulation utilities
@@ -96,7 +96,7 @@ def camelJoin(iterable):
 
 
 def findFmtFields(s):
-    return _interBracketsRgx.findall(s)
+    return _interBracketsRexp.findall(s)
 
 def padded(i, padding=3):
     return "{0:0{1}d}".format(i, padding)
@@ -107,15 +107,15 @@ def getNumPart(in_sName, **kwargs):
     sPart = kwargs.get("part", "iterative")
 
     if sPart == "trailing":
-        rgx = _trailingNumRgx
+        rexp = _trailingNumRexp
     elif sPart == "iterative":
-        rgx = _iterativePartRgx
+        rexp = _iterativePartRexp
     else:
         raise ValueError('Invalid value for "part" kwarg : "{0}". \
                         Must be "iterative" or "trailing".'.format(sPart))
 
     try:
-        sIter = rgx.findall(in_sName)[-1]
+        sIter = rexp.findall(in_sName)[-1]
     except IndexError:
         return '' if bAsStr else 0
 

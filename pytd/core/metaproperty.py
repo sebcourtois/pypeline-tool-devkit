@@ -21,7 +21,7 @@ def setattr_(*args):
 
     return True
 
-_STR_TO_LIST_RGX = re.compile(r'[\w\-.]+', re.L)
+_STR_TO_LIST_REXP = re.compile(r'[\w\-.]+', re.L)
 
 class MetaProperty(object):
 
@@ -228,7 +228,7 @@ class MetaProperty(object):
 
         if self.isMulti():
             if value and isinstance(value, basestring):
-                values = _STR_TO_LIST_RGX.findall(value)
+                values = _STR_TO_LIST_REXP.findall(value)
             else:
                 values = argToList(value)
 

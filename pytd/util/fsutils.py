@@ -1,5 +1,7 @@
 
 
+from __future__ import unicode_literals
+
 import os
 import re
 import fnmatch
@@ -213,7 +215,6 @@ def iterPaths(sStartDirPath, **kwargs):
     onlyFilesFunc = kwargs.get("onlyFiles", None)
 
     iStartDepth = len(pathSplitDirs(sStartDirPath))
-    print iStartDepth
     for sDirPath, sDirList, sFileList in os.walk(sStartDirPath):
 
         sDirPath = sDirPath.replace("\\", "/")
@@ -287,6 +288,7 @@ def commonDir(sPathList):
     sDir = osp.commonprefix(sPathList)
     return sDir if (sDir[-1] in ("\\", "/")) else (osp.dirname(sDir) + "/")
 
+
 _copy_action = {
 '': 'copying',
 'hard': 'hard linking',
@@ -294,7 +296,7 @@ _copy_action = {
 
 def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_place=False,
              update=False, link="", verbose=1, dry_run=False, buffer_size=64 * 1024):
-    """Copy a file 'sSrcPath' to 'sDstPath'. (Stolen and updated from distutils.file_util)
+    """Copy a file 'sSrcPath' to 'sDstPath'. (Stolen and customized from distutils.file_util.copy_file)
 
     If 'sDstPath' is a directory, then 'sSrcPath' is copied there with the same name;
     otherwise, it must be a filename.  (If the file exists, it will be
@@ -325,15 +327,16 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
     # changing it (ie. it's not already a hard/soft link to sSrcPath OR
     # (not update) and (sSrcPath newer than sDstPath).
 
-    try:
-        sAction = _copy_action[link].capitalize()
-    except KeyError:
-        raise ValueError(u"Invalid value for 'link' argument: '{}'. Expected one of {}."
-                         .format(link, _copy_action.keys()))
+#    try:
+#        sAction = _copy_action[link].capitalize()
+#    except KeyError:
+#        raise ValueError("Invalid value for 'link' argument: '{}'. Expected one of {}."
+#                         .format(link, _copy_action.keys()))
+    sAction = "Copying"
 
     srcStat = os.stat(sSrcPath)
     if not S_ISREG(srcStat.st_mode):
-        raise EnvironmentError(u"Source file NOT found: '{}'.".format(sSrcPath))
+        raise EnvironmentError("Source file NOT found: '{}'.".format(sSrcPath))
 
     if osp.isdir(sDstPath):
         sDirPath = sDstPath
@@ -343,83 +346,92 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
 
     if update and (not pathNewer(sSrcPath, sDstPath)):
         if verbose >= 1:
-            logMsg(u"Not copying (output up-to-date): '{}'".format(sSrcPath), log="debug")
+            logMsg("Not copying (output up-to-date): '{}'".format(sSrcPath), log="debug")
         return sDstPath, False
 
     if verbose >= 1:
-        if osp.basename(sDstPath) == osp.basename(sSrcPath):
-            logMsg(u"\n{} '{}'\n     -> '{}'".format(sAction, sSrcPath, sDirPath))
+        if osp.normcase(osp.basename(sDstPath)) == osp.normcase(osp.basename(sSrcPath)):
+            logMsg("\n{} {}\n     to {}".format(sAction, sSrcPath, sDirPath))
         else:
-            logMsg(u"\n{} '{}'\n     -> '{}'".format(sAction, sSrcPath, sDstPath))
+            logMsg("\n{} {}\n     as {}".format(sAction, sSrcPath, sDstPath))
 
     if dry_run:
         return (sDstPath, True)
 
-    # If linking (hard or symbolic), use the appropriate system call
-    # (Unix only, of course, but that's the caller's responsibility)
-    if link == 'hard':
-        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
-            os.link(sSrcPath, sDstPath)
-    elif link == 'symb':
-        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
-            os.symlink(sSrcPath, sDstPath)
+#    # If linking (hard or symbolic), use the appropriate system call
+#    # (Unix only, of course, but that's the caller's responsibility)
+#    if link == 'hard':
+#        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
+#            os.link(sSrcPath, sDstPath)
+#    elif link == 'symb':
+#        if not (osp.exists(sDstPath) and osp.samefile(sSrcPath, sDstPath)):
+#            os.symlink(sSrcPath, sDstPath)
+#
+#    # Otherwise (non-Mac, not linking), copy the file contents and
+#    # (optionally) copy the times and mode.
+#    else:
+    if sameFile(sSrcPath, sDstPath):
+        sMsg = "Source and destination files are the same:"
+        sMsg += "\n    source:      ", sSrcPath
+        sMsg += "\n    destination: ", sDstPath
+        raise EnvironmentError(sMsg)
 
-    # Otherwise (non-Mac, not linking), copy the file contents and
-    # (optionally) copy the times and mode.
-    else:
-        if sameFile(sSrcPath, sDstPath):
-            sMsg = u"Source and destination files are the same:"
-            sMsg += u"\n    source:      ", sSrcPath
-            sMsg += u"\n    destination: ", sDstPath
-            raise EnvironmentError(sMsg)
+    sTmpPath = ""
+    try:
+        dstStat = os.stat(sDstPath)
+    except OSError:
+        pass
+    else:# destination path exists
+        if not S_ISREG(dstStat.st_mode):
+            raise EnvironmentError("Path already exists but NOT a regular file: '{}'."
+                                   .format(sDstPath))
+        if not in_place:
+            #pathRename(sDstPath, sDstPath)
+            sTmpPath = sDstPath + ".tmpcopy"
 
-        sTmpPath = ""
-        try:
-            dstStat = os.stat(sDstPath)
-        except OSError:
-            pass
-        else:# destination  path exists
-            if not S_ISREG(dstStat.st_mode):
-                raise EnvironmentError(u"Path already exists but NOT a regular file: '{}'."
-                                       .format(sDstPath))
-            if not in_place:
-                pathRename(sDstPath, sDstPath)
-                sTmpPath = sDstPath + ".tmpcopy"
-
-        sCopyPath = sTmpPath if sTmpPath else sDstPath
-        try:
-            with open(sSrcPath, 'rb') as srcFobj:
-                with open(sCopyPath, 'wb') as dstFobj:
-                    while True:
-                        buf = srcFobj.read(buffer_size)
-                        if not buf:
-                            break
-                        dstFobj.write(buf)
-
-            dstStat = os.stat(sCopyPath)
-            if dstStat.st_size != srcStat.st_size:
-                srcSize = MemSize(srcStat.st_size)
-                dstSize = MemSize(dstStat.st_size)
-                raise IOError("Incomplete copy: {}/{} bytes copied.".format(dstSize, srcSize))
-
-            if preserve_mode or preserve_times:
-                # According to David Ascher <da@ski.org>, utime() should be done
-                # before chmod() (at least under NT).
-                if preserve_times:
-                    os.utime(sCopyPath, (srcStat[ST_ATIME], srcStat[ST_MTIME]))
-                if preserve_mode:
-                    os.chmod(sCopyPath, S_IMODE(srcStat[ST_MODE]))
-
-            if sTmpPath:
-                if os.name == "nt": # on nt platform, destination must be removed first
-                    os.remove(sDstPath)
-                pathRename(sTmpPath, sDstPath)
-
-        finally:
-            if sTmpPath and osp.exists(sTmpPath):
-                os.remove(sTmpPath)
+    sCopyPath = sTmpPath if sTmpPath else sDstPath
+    try:
+        copyFileData(sSrcPath, sCopyPath,
+                     preserve_mode=preserve_mode, preserve_times=preserve_times,
+                     buffer_size=buffer_size, sourceStat=srcStat)
+        if sTmpPath:
+            if os.name == "nt": # on nt platform, destination must be removed first
+                os.remove(sDstPath)
+            pathRename(sTmpPath, sDstPath)
+    finally:
+        if sTmpPath and osp.exists(sTmpPath):
+            os.remove(sTmpPath)
 
     return (sDstPath, True)
+
+def copyFileData(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True,
+                 buffer_size=64 * 1024, sourceStat=None):
+
+    srcStat = sourceStat if sourceStat else os.stat(sSrcPath)
+
+    with open(sSrcPath, 'rb') as srcFobj:
+        with open(sDstPath, 'wb') as dstFobj:
+            while True:
+                buf = srcFobj.read(buffer_size)
+                if not buf:
+                    break
+                dstFobj.write(buf)
+
+    if preserve_mode or preserve_times:
+        # According to David Ascher <da@ski.org>, utime() should be done
+        # before chmod() (at least under NT).
+        if preserve_times:
+            os.utime(sDstPath, (srcStat[ST_ATIME], srcStat[ST_MTIME]))
+        if preserve_mode:
+            os.chmod(sDstPath, S_IMODE(srcStat[ST_MODE]))
+
+    dstStat = os.stat(sDstPath)
+    if dstStat.st_size != srcStat.st_size:
+        srcSize = MemSize(srcStat.st_size)
+        dstSize = MemSize(dstStat.st_size)
+        raise IOError("Incomplete copy: {}/{} bytes copied.".format(dstSize, srcSize))
+
+    return True
 
 def pathNewer(sSrcPath, sDstPath):
     """Tells if the sDstPath is newer than the sSrcPath.
@@ -434,7 +446,7 @@ def pathNewer(sSrcPath, sDstPath):
     will have the same "age".
     """
     if not osp.exists(sSrcPath):
-        raise EnvironmentError(u"No such file: '{}'.".format(osp.abspath(sSrcPath)))
+        raise EnvironmentError("No such file: '{}'.".format(osp.abspath(sSrcPath)))
     if not osp.exists(sDstPath):
         return True
 
@@ -644,17 +656,28 @@ def topmostFoundDir(sPath):
 
 def parseDirContent(sInDirPath):
 
+    ignoreFunc = ignorePatterns(".*", "*.db")
+
     sAllDirList = []
     sAllFileList = []
+
     for sCurDirPath, sDirList, sFileList in os.walk(sInDirPath):
+
+        sIgnoredDirs = ignoreFunc(sCurDirPath, sDirList)
+        for sDir in sIgnoredDirs:
+            try: sDirList.remove(sDir)
+            except ValueError: pass
+
+        sIgnoredFiles = ignoreFunc(sCurDirPath, sFileList)
 
         sCurDirPath = sCurDirPath.replace("\\", "/")
 
-        sAllDirList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath) for s in sDirList)
-        sAllFileList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath) for s in sFileList)
+        sAllDirList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath)
+                           for s in sDirList)
+        sAllFileList.extend(pathRelativeTo(pathJoin(sCurDirPath, s), sInDirPath)
+                            for s in sFileList if s not in sIgnoredFiles)
 
     dirSize = MemSize(sum(osp.getsize(pathJoin(sInDirPath, p)) for p in sAllFileList))
 
-    return {"dir_size":dirSize,
-            "dir_subfiles":sAllFileList,
-            "dir_subdirs":sAllDirList}
+    return {"dir_size":dirSize, "dir_subfiles":sAllFileList, "dir_subdirs":sAllDirList}
+
