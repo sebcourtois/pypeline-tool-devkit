@@ -16,12 +16,14 @@ from encodings import aliases
 import imp
 from modulefinder import ModuleFinder
 from itertools import islice
+#from pprint import pprint
 
 SYSTEM_ENCODING = locale.getlocale()[1]
 if not SYSTEM_ENCODING:
     locale.setlocale(locale.LC_ALL, '')
     SYSTEM_ENCODING = locale.getlocale()[1]
 
+SYSTEM_ENCODING = aliases.aliases.get(SYSTEM_ENCODING, SYSTEM_ENCODING)
 SYSTEM_CODEC = codecs.lookup(SYSTEM_ENCODING)
 UTF8_CODEC = codecs.lookup("utf_8")
 
@@ -29,6 +31,9 @@ ALL_CODEC_ALIASES = {}
 for sAlias, sCodec in aliases.aliases.iteritems():
     ALL_CODEC_ALIASES.setdefault(sCodec, []).append(sAlias)
 del sAlias, sCodec
+
+#pprint(ALL_CODEC_ALIASES)
+#pprint(aliases.aliases)
 
 SYS_CODEC_ALIASES = [SYSTEM_ENCODING] + ALL_CODEC_ALIASES[SYSTEM_ENCODING]
 UTF8_CODEC_ALIASES = ["utf_8"] + ALL_CODEC_ALIASES["utf_8"]
