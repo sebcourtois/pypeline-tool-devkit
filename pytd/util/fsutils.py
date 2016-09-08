@@ -1,8 +1,6 @@
 
-
-from __future__ import unicode_literals
-
 import os
+import os.path as osp
 import re
 import fnmatch
 import json
@@ -10,13 +8,12 @@ import hashlib
 import codecs
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG
 
-from .external import parse
-from .sysutils import toUnicode, argToList
-from .logutils import logMsg
-from .systypes import MemSize
+from pytd.util.external import parse
+from pytd.util.sysutils import toUnicode, argToList, toStr
+from pytd.util.logutils import logMsg
+from pytd.util.systypes import MemSize
 from pytd.util.sysutils import SYSTEM_ENCODING, hostApp
 
-osp = os.path
 
 def isDirStat(statobj):
     return S_ISDIR(statobj.st_mode)
@@ -179,8 +176,8 @@ def pathRename(sSrcPath, sDstPath):
     try:
         os.rename(sSrcPath, sDstPath)
     except WindowsError as e:
-        if hostApp() == "maya!":
-            raise WindowsError(toUnicode("{} - {}: {}".format(e.args[0], e.strerror , sSrcPath)))
+        if hostApp() == "maya":
+            raise WindowsError(toUnicode("code {} - {}: {}".format(e.args[0], e.strerror , sSrcPath)))
         else:
             raise WindowsError(e.args[0], "{}: {}".format(e.strerror , sSrcPath))
 
@@ -326,6 +323,9 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
     # should probably blow up if destination exists and we would be
     # changing it (ie. it's not already a hard/soft link to sSrcPath OR
     # (not update) and (sSrcPath newer than sDstPath).
+
+    sSrcPath = toStr(sSrcPath)
+    sDstPath = toStr(sDstPath)
 
 #    try:
 #        sAction = _copy_action[link].capitalize()
@@ -499,11 +499,9 @@ def distribTree(in_sSrcRootDir, in_sDestRootDir, **kwargs):
     sCopiedFileList = []
 
     if sFilePathList == "NoEntry":
-
-        raise NotImplementedError, "Sorry, but for now, you must provide a list of file paths to copy."
-
+        sMsg = "Sorry, but for now, you must provide a list of file paths to copy."
+        raise NotImplementedError(sMsg)
     else:
-
         sFilePathList = argToList(sFilePathList)
         sFilePathList.sort()
 
