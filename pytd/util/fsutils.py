@@ -25,7 +25,7 @@ def pathEqual(p, p1):
     return pathNorm(p, case=True) == pathNorm(p1, case=True)
 
 def pathNorm(p, case=False, keepEndSlash=False):
-    
+
     if keepEndSlash:
         bEndSlash = p.replace("\\", "/").endswith("/")
         p = osp.normpath(p)
@@ -217,6 +217,8 @@ def iterPaths(sStartDirPath, **kwargs):
         sDirPath = sDirPath.replace("\\", "/")
 
         if not bRecursive:
+#            print sDirPath, sStartDirPath
+#            print len(pathSplitDirs(sDirPath)), iStartDepth
             if len(pathSplitDirs(sDirPath)) > iStartDepth:
                 del sDirList[:] # don't walk further
 
@@ -276,7 +278,7 @@ def iterPaths(sStartDirPath, **kwargs):
 
 def addEndSlash(p):
     #return p if p.endswith("/") else p + "/"
-    return (p + "/") if p and (not p.replace("\\","/").endswith("/")) else p
+    return (p + "/") if p and (not p.replace("\\", "/").endswith("/")) else p
 
 def delEndSlash(p):
     return p[:-1] if p.endswith("/") else p
