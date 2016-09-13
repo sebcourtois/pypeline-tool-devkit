@@ -211,16 +211,12 @@ def iterPaths(sStartDirPath, **kwargs):
 
     onlyFilesFunc = kwargs.get("onlyFiles", None)
 
-    iStartDepth = len(pathSplitDirs(sStartDirPath))
     for sDirPath, sDirList, sFileList in os.walk(sStartDirPath):
 
         sDirPath = sDirPath.replace("\\", "/")
 
         if not bRecursive:
-#            print sDirPath, sStartDirPath
-#            print len(pathSplitDirs(sDirPath)), iStartDepth
-            if len(pathSplitDirs(sDirPath)) > iStartDepth:
-                del sDirList[:] # don't walk further
+            del sDirList[:] # don't walk further
 
         if ignoreDirsFunc is not None:
             sIgnoredDirs = ignoreDirsFunc(sDirPath, sDirList)
