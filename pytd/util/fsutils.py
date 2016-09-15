@@ -6,7 +6,7 @@ import fnmatch
 import json
 import hashlib
 import codecs
-from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG
+from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG, S_IFMT
 
 from pytd.util.external import parse
 from pytd.util.sysutils import toUnicode, argToList, toStr
@@ -21,8 +21,11 @@ def isDirStat(statobj):
 def isFileStat(statobj):
     return S_ISREG(statobj.st_mode)
 
+def statSig(statobj):
+    return (S_IFMT(statobj.st_mode), statobj.st_size, statobj.st_mtime)
+
 def pathEqual(p, p1):
-    return pathNorm(p, case=True) == pathNorm(p1, case=True)
+    return pathNormAll(p) == pathNormAll(p1)
 
 def pathNorm(p, case=False, keepEndSlash=False):
 
@@ -38,6 +41,9 @@ def pathNorm(p, case=False, keepEndSlash=False):
         p = osp.normcase(p)
 
     return p.replace("\\", "/")
+
+def pathNormAll(p):
+    return osp.normcase(osp.normpath(p)).replace("\\", "/")
 
 def normCase(p):
     return osp.normcase(p).replace("\\", "/")
@@ -129,9 +135,9 @@ def pathStartsWith(p, sDirPath, pathSplits=None, log=False):
     if pathSplits:
         sPathDirList = pathSplits
     else:
-        sPathDirList = pathSplitDirs(pathNorm(p, case=True))
+        sPathDirList = pathSplitDirs(pathNormAll(p))
 
-    sDirPath = addEndSlash(pathNorm(sDirPath, case=True))
+    sDirPath = addEndSlash(pathNormAll(sDirPath))
 
     numDirs = len(pathSplitDirs(sDirPath))
     if numDirs > len(sPathDirList):

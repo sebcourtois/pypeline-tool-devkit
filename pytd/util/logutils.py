@@ -112,12 +112,13 @@ def forceLog(**kwargs):
 
             global logSeverity
 
-            iOldSeverity = logSeverity
+            iPrevSeverity = logSeverity
             logSeverity = iSeverity
 
-            ret = func(*args, **kwargs)
-
-            logSeverity = iOldSeverity
+            try:
+                ret = func(*args, **kwargs)
+            finally:
+                logSeverity = iPrevSeverity
 
             return ret
 

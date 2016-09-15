@@ -22,8 +22,6 @@ class MetaObject(object):
     def __init__(self):
 
         cls = self.__class__
-        if cls.propertyPerAccessorDct is None:
-            cls.propertyPerAccessorDct = cls._propertyNamesPerAccessor()
 
         self._writingValues_ = False
         self.__metaProperties = {}
@@ -46,8 +44,10 @@ class MetaObject(object):
 
             metaprpty = self.__metaProperties[sProperty]
             if metaprpty.isReadable():
+                #logMsg("read", self, sProperty, metaprpty.read(), log="debug")
                 setattr(self, metaprpty.name, metaprpty.read())
             elif metaprpty.isLazy():
+                #logMsg("defaultValue", self, sProperty, metaprpty.defaultValue(), log="debug")
                 setattr(self, metaprpty.name, metaprpty.defaultValue())
 
     def primeProperty(self):

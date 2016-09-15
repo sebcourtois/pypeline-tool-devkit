@@ -165,7 +165,8 @@ class MetaProperty(object):
 
     def isReadable(self):
 
-        bReadable = self.__readable and self.initAccessor()
+        bInitOk = self.initAccessor()
+        bReadable = self.__readable and bInitOk
 
         if bReadable and (self.__readFunc is None):
             sFunc = self.readerName
@@ -174,6 +175,7 @@ class MetaProperty(object):
             else:
                 self.__readFunc = partial(getattr, self._accessor)
 
+        #logMsg(self.__readable, bInitOk, self.__readFunc, bReadable, log="debug")
         return bReadable
 
     def read(self):
