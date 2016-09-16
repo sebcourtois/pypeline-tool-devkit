@@ -6,7 +6,10 @@ from PySide import QtGui
 try:
     import shiboken
 except ImportError:
-    from PySide import shiboken
+    try:
+        from PySide import shiboken
+    except ImportError:
+        print "shiboken not found."
 
 _qTransformModeDct = {
 "fast":Qt.FastTransformation,
