@@ -355,9 +355,9 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
 
     if verbose >= 1:
         if osp.normcase(osp.basename(sDstPath)) == osp.normcase(osp.basename(sSrcPath)):
-            logMsg("\n{} {}\n     to {}".format(sAction, sSrcPath, sDirPath))
+            logMsg("{} {}\n     to {}".format(sAction, sSrcPath, sDirPath))
         else:
-            logMsg("\n{} {}\n     as {}".format(sAction, sSrcPath, sDstPath))
+            logMsg("{} {}\n     as {}".format(sAction, sSrcPath, sDstPath))
 
     if dry_run:
         return (sDstPath, True)
