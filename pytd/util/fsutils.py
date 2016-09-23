@@ -6,7 +6,9 @@ import fnmatch
 import json
 import hashlib
 import codecs
-from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_ISDIR, S_ISREG, S_IFMT
+from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_IFMT
+from stat import S_IFREG, S_ISDIR, S_ISREG
+
 
 from pytd.util.external import parse
 from pytd.util.sysutils import toUnicode, argToList, toStr
@@ -24,8 +26,58 @@ def isFileStat(statobj):
 def statSig(statobj):
     return (S_IFMT(statobj.st_mode), statobj.st_size, statobj.st_mtime)
 
-def pathEqual(p, p1):
-    return pathNormAll(p) == pathNormAll(p1)
+_FILE_EQUAL_CACHE = {}
+
+def sameContent(p, p2, checksum="", shallow=True):
+
+    """Compare two files.
+
+    Arguments:
+
+    p  -- First file path
+    p2 -- Second file path
+    checksum -- First file checksum
+    shallow -- Just check stat signature (do not read the files).
+               defaults to True.
+
+    Return value:
+
+    True if the files are the same, False otherwise.
+
+    This function uses a cache for past comparisons and the results,
+    with a cache invalidation mechanism relying on stale signatures.
+
+    """
+    p = pathNormAll(p)
+    p2 = pathNormAll(p2)
+
+    st1 = statSig(os.stat(p))
+    st2 = statSig(os.stat(p2))
+    if st1[0] != S_IFREG or st2[0] != S_IFREG:
+        return False, "", checksum
+    if shallow and st1 == st2:
+        return True, "", checksum
+    if st1[1] != st2[1]:
+        return False, "", checksum
+
+    res = _FILE_EQUAL_CACHE.get((p, p2, st1, st2))
+    if res is None:
+
+        if not checksum:
+            checksum = sha1HashFile(p)
+
+        checksum2 = sha1HashFile(p2)
+        res = ((checksum == checksum2), checksum2, checksum)
+
+        if len(_FILE_EQUAL_CACHE) > 100:      # limit the maximum size of the cache
+            _FILE_EQUAL_CACHE.clear()
+
+        _FILE_EQUAL_CACHE[p, p2, st1, st2] = res
+
+    return res
+
+def pathEqual(p, p2):
+    return pathNormAll(p) == pathNormAll(p2)
 
 def pathNorm(p, case=False, keepEndSlash=False):
 
@@ -626,18 +678,18 @@ def jsonRead(p, **kwargs):
 
     return pyobj
 
-def sha1HashFile(sFilePath, chunk_size=16 * 1024):
+def sha1HashFile(sFilePath, chunk_size=32 * 1024):
+
+    #print "sha1HashFile", sFilePath
 
     with open(sFilePath, "rb") as fileobj:
 
         h = hashlib.sha1()
 
         while True:
-
             chunk = fileobj.read(chunk_size)
             if not chunk:
                 break
-
             h.update(chunk)
 
     return h.hexdigest()
