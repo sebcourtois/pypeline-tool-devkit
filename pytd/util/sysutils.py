@@ -20,8 +20,8 @@ from itertools import islice
 
 SYSTEM_ENCODING = locale.getlocale()[1]
 if not SYSTEM_ENCODING:
-    locale.setlocale(locale.LC_ALL, '')
-    SYSTEM_ENCODING = locale.getlocale()[1]
+    #locale.setlocale(locale.LC_ALL, '')
+    SYSTEM_ENCODING = locale.getdefaultlocale()[1]
 
 SYSTEM_ENCODING = aliases.aliases.get(SYSTEM_ENCODING, SYSTEM_ENCODING)
 SYSTEM_CODEC = codecs.lookup(SYSTEM_ENCODING)
