@@ -435,8 +435,6 @@ def importAtomFile(sFilePath, **kwargs):
         sOpt = "{}={}".format(k, value)
         sOptList.append(sOpt)
 
-    print ";".join(sOptList)
-
     sSelected = kwargs.get("selected", "selectedOnly")
     if sSelected == "selectedOnly":
         sXfmList = mc.ls(sl=True, tr=True)
@@ -449,6 +447,9 @@ def importAtomFile(sFilePath, **kwargs):
     sPreAttrSet = set()
     for sXfm in sXfmList:
         sPreAttrSet.update(sXfm + "." + attr for attr in listAttr_(sXfm))
+
+    print "Importing atom file:", sFilePath
+    print ";".join(sOptList)
 
     res = pm.importFile(sFilePath, type="atomImport",
                          renameAll=True,
