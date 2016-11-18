@@ -267,6 +267,10 @@ def isQtGui(qApp=None):
             return False
 
     from PySide import QtGui
+
+    if not isinstance(qApp, QtGui.QApplication):
+        return False
+
     return (qApp.type() != QtGui.QApplication.Tty)
 
 def qtApp():
