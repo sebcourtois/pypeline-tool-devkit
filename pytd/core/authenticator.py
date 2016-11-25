@@ -20,15 +20,16 @@ class Authenticator(object):
     def logOut(self):
         return True
 
-    def authenticate(self, **kwargs):
+    def authenticate(self, user=None, password=None, relog=False):
 
-        if kwargs.get('relog', False):
+        if relog:
             self.logOut()
 
         userData = self.loggedUser()
         if not userData:
-
-            if qtGuiApp():
+            if user and password:
+                userData = self.logIn(user, password)
+            elif qtGuiApp():
                 userData = loginDialog(loginFunc=self.logIn)
             else:
                 for _ in xrange(5):
@@ -41,7 +42,6 @@ class Authenticator(object):
                     else:
                         if userData:
                             break
-
         if userData:
             self.authenticated = True
             print (u"<{}> User '{}' authenticated successfully !"
