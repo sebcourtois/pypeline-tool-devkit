@@ -76,7 +76,7 @@ def toStr(value, encoding=SYSTEM_ENCODING):
         return str_(value, encoding)
 
     if isinstance(value, Exception):
-        return toStr(value.args[-1])
+        return toStr(value.args[-1] if value.args else value)
 
     if isinstance(value, str):
         return value
@@ -101,7 +101,7 @@ def toUnicode(value, encoding=SYSTEM_ENCODING):
         return unicode_(value, encoding)
 
     if isinstance(value, Exception):
-        return toUnicode(value.args[-1])
+        return toUnicode(value.args[-1] if value.args else value)
 
     if isinstance(value, unicode):
         return value
