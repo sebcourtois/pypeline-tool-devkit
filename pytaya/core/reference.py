@@ -1,5 +1,4 @@
 
-
 import maya.cmds as mc
 import pymel.core as pm
 
@@ -11,6 +10,7 @@ def listReferences(**kwargs):
     bLocked = kwargs.pop("locked", None)
     bLoaded = kwargs.pop("loaded", None)
     bTopRef = kwargs.pop("topReference", kwargs.pop("top", True))
+    excludeFunc = kwargs.pop("exclude", None)
 
     if bSelected:
         searchList = mc.ls(sl=True , dag=True, referencedNodes=True)
@@ -18,22 +18,24 @@ def listReferences(**kwargs):
         if sRefNodeList:
             searchList.extend(sRefNodeList)
     else:
-        searchList = pm.iterReferences(recursive=not bTopRef)
+        searchList = pm.iterReferences(recursive=(not bTopRef))
 
     sRefNodeList = []
     oFileRefList = []
 
     for each in searchList:
 
+        oFileRef = None
         if bSelected:
             sRefNode = mc.referenceQuery(each, referenceNode=True, topReference=bTopRef)
         else:
             sRefNode = each.refNode.name()
+            oFileRef = each
 
         if sRefNode in sRefNodeList:
             continue
-        else:
-            sRefNodeList.append(sRefNode)
+
+        sRefNodeList.append(sRefNode)
 
         if bLocked is not None:
             if (mc.getAttr(sRefNode + ".locked") != bLocked):
@@ -43,11 +45,17 @@ def listReferences(**kwargs):
             if (mc.referenceQuery(sRefNode, isLoaded=True) != bLoaded):
                 continue
 
-        oFileRefList.append(pm.FileReference(sRefNode))
+        if not oFileRef:
+            oFileRef = pm.FileReference(sRefNode)
+
+        if excludeFunc and excludeFunc(oFileRef):
+            continue
+
+        oFileRefList.append(oFileRef)
 
     return oFileRefList
 
-def processSelectedReferences(func):
+def processSceneReferences(func):
 
     def doIt(*args, **kwargs):
 
