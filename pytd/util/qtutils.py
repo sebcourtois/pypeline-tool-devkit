@@ -16,6 +16,31 @@ _qTransformModeDct = {
 "smooth":Qt.SmoothTransformation
 }
 
+def getWidget(sWidgetName="", **kwargs):
+
+    bWithFocus = kwargs.pop("withFocus", kwargs.pop("wf", False))
+
+    if bWithFocus:
+
+        return QtGui.qApp.focusWidget()
+
+    else:
+
+        if not sWidgetName:
+            raise ValueError, 'Invalid input widget name to get: "{0}"'.format(sWidgetName)
+
+        bTopLevel = kwargs.pop("topLevelWidgets", kwargs.pop("top", True))
+
+        widgetList = QtGui.qApp.topLevelWidgets() if bTopLevel else QtGui.qApp.allWidgets()
+
+        foundWidgets = []
+        for widget in widgetList:
+            if widget.objectName() == sWidgetName:
+                foundWidgets.append(widget)
+
+        if foundWidgets:
+            return foundWidgets if len(foundWidgets) > 1 else foundWidgets[0]
+
 def clampPixmapSize(pixmap, iLimitSize, mode="fast"):
 
     qMode = _qTransformModeDct[mode]
