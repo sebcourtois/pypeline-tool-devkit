@@ -25,13 +25,12 @@ def shadersFromObjects(objList, connectedTo=""):
     if not objList:
         return []
 
-    oSGMatList = shadingGroupsFromObjects(objList)
+    oMatSgList = shadingGroupsFromObjects(objList)
 
     oMatList = []
-    for oSGMat in oSGMatList:
-        sName = oSGMat.attr(sAttrName).name() if connectedTo else oSGMat.name()
-        oMatList.extend(pm.ls(listForNone(mc.listConnections(sName,
-                                                             source=True,
+    for oMatSg in oMatSgList:
+        sName = oMatSg.attr(sAttrName).name() if connectedTo else oMatSg.name()
+        oMatList.extend(pm.ls(listForNone(mc.listConnections(sName, source=True,
                                                              destination=False)),
                               type=mc.listNodeTypes('shader', ex="texture")))
     return oMatList
