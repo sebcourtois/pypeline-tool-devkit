@@ -1,4 +1,5 @@
 
+from functools import partial
 from getpass import getpass
 
 from pytd.util.sysutils import qtGuiApp, toStr
@@ -22,21 +23,31 @@ class Authenticator(object):
 
     def authenticate(self, user=None, password=None, relog=False):
 
+        if user and password:
+            logInFunc = partial(self.logIn, writeCookie=False)
+            userData = {}
+        else:
+            logInFunc = self.logIn
+            userData = self.loggedUser()
+
+        if (not relog) and userData and user and userData["login"] != user:
+            relog = True
+
         if relog:
             self.logOut()
+            userData = {}
 
-        userData = self.loggedUser()
         if not userData:
             if user and password:
-                userData = self.logIn(user, password)
+                userData = logInFunc(user, password)
             elif qtGuiApp():
-                userData = loginDialog(loginFunc=self.logIn)
+                userData = loginDialog(loginFunc=logInFunc)
             else:
                 for _ in xrange(5):
                     sUser = raw_input("login:")
                     sPwd = getpass()
                     try:
-                        userData = self.logIn(sUser, sPwd)
+                        userData = logInFunc(sUser, sPwd)
                     except Exception, e:
                         print toStr(e)
                     else:
