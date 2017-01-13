@@ -1,5 +1,6 @@
 
 import sys
+import os.path as osp
 import traceback
 from functools import partial
 import logging
@@ -14,15 +15,14 @@ from pytd.util.sysutils import hostApp, reloadModule, toStr
 from pytd.util.logutils import logMsg
 
 
-def catchJobException(func):
-
+def safely(func, returns=None):
     def doIt(*args, **kwargs):
         try:
             ret = func(*args, **kwargs)
         except Exception as e:
-            pm.displayError(e.message)
+            pm.displayError(toStr(e))
             traceback.print_exc()
-            return
+            return returns
         return ret
     return doIt
 
@@ -64,9 +64,15 @@ class ToolSetup(object):
         self.preNewOrOpenedJobId = None
         self.sceneSavedJobId = None
         self.preCreateRefCheckCbkId = None
+        self.mayaInitializedCbkId = None
+        self.beforeNewCheckCbkId = None
+        self.beforeOpenCheckCbkId = None
+
+        self.currentSceneName = None
+
+        logutils.logSeverity = self.getLogLevel()
 
     def setLogLevel(self, *args):
-
         logutils.logSeverity = args[0]
         pm.optionVar["TD_logLevel"] = args[0]
 
@@ -74,6 +80,7 @@ class ToolSetup(object):
         return pm.optionVar.get("TD_logLevel", 0)
 
     def beforeReloading(self, *args):
+        self.killCallbacks()
         self.killScriptJobs()
 
     def afterReloading(self, *args):
@@ -91,6 +98,10 @@ class ToolSetup(object):
         sysutils.reloadModule(cls.__module__)
 
         self.afterReloading()
+
+    def onMayaInitialized(self, clientData=None):
+        logMsg("Maya Initialized", log="callback")
+        return True
 
     def onPostSceneRead(self, *args):
         logMsg("Post Scene Read", log="callback")
@@ -114,46 +125,90 @@ class ToolSetup(object):
         logMsg("Before Create Reference Check", log="callback")
         return True
 
+    def onBeforeNewCheck(self, clientData=None):
+        logMsg("Before New Check", log="callback")
+        self.currentSceneName = ""
+        return True
+
+    def onBeforeOpenCheck(self, mFileObj, clientData=None):
+        logMsg("Before Open Check", log="callback")
+        self.currentSceneName = osp.normpath(mFileObj.resolvedFullName()).replace("\\", "/")
+        return True
+
+    def startCallbacks(self):
+
+        logMsg("Start Callbacks", log="debug")
+
+        args = (om.MSceneMessage.kMayaInitialized, safely(self.onMayaInitialized))
+        self.mayaInitializedCbkId = om.MSceneMessage.addCallback(*args)
+        logMsg("MayaInitialized Callback Started.")
+
+        args = (om.MSceneMessage.kBeforeCreateReferenceCheck, safely(self.onPreCreateReferenceCheck, returns=True))
+        self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
+        logMsg("PreCreateReferenceCheck Callback Started.")
+
+        args = (om.MSceneMessage.kBeforeNewCheck, safely(self.onBeforeNewCheck, returns=True))
+        self.beforeNewCheckCbkId = om.MSceneMessage.addCheckCallback(*args)
+        logMsg("BeforeNewCheck Callback Started.")
+
+        args = (om.MSceneMessage.kBeforeOpenCheck, safely(self.onBeforeOpenCheck, returns=True))
+        self.beforeOpenCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
+        logMsg("BeforeOpenCheck Callback Started.")
+
+    def killCallbacks(self):
+
+        if self.mayaInitializedCbkId:
+            self.mayaInitializedCbkId = om.MSceneMessage.removeCallback(self.mayaInitializedCbkId)
+            logMsg("MayaInitialized Callback Killed.")
+
+        if self.preCreateRefCheckCbkId:
+            self.preCreateRefCheckCbkId = om.MSceneMessage.removeCallback(self.preCreateRefCheckCbkId)
+            logMsg("PreCreateReferenceCheck Callback Killed.")
+
+        if self.beforeNewCheckCbkId:
+            self.beforeNewCheckCbkId = om.MSceneMessage.removeCallback(self.beforeNewCheckCbkId)
+            logMsg("BeforeNewCheck Callback Killed.")
+
+        if self.beforeOpenCheckCbkId:
+            self.beforeOpenCheckCbkId = om.MSceneMessage.removeCallback(self.beforeOpenCheckCbkId)
+            logMsg("BeforeOpenCheck Callback Killed.")
+
     def startScriptJobs(self):
 
         if pm.about(batch=True):
             return
 
-        logMsg("Launch Start ScriptJobs", log="debug")
+        logMsg("Start ScriptJobs", log="debug")
 
         self.postSceneReadJobId = pm.scriptJob(event=("PostSceneRead",
-                                                      catchJobException(self.onPostSceneRead)),
+                                                      safely(self.onPostSceneRead)),
                                                       cu=True, kws=False)
         logMsg("PostSceneRead Job Started.")
 
         self.newSceneOpenedJobId = pm.scriptJob(event=("NewSceneOpened",
-                                                       catchJobException(self.onNewSceneOpened)),
+                                                       safely(self.onNewSceneOpened)),
                                                        cu=True, kws=False)
         logMsg("NewSceneOpened Job Started.")
 
         self.sceneOpenedJobId = pm.scriptJob(event=("SceneOpened",
-                                                    catchJobException(self.onSceneOpened)),
+                                                    safely(self.onSceneOpened)),
                                                     cu=True, kws=False)
         logMsg("SceneOpened Job Started.")
 
         self.preNewOrOpenedJobId = pm.scriptJob(event=("PreFileNewOrOpened",
-                                                       catchJobException(self.onPreFileNewOrOpened)),
+                                                       safely(self.onPreFileNewOrOpened)),
                                                        cu=True, kws=False)
         logMsg("PreNewFileOrOpened Job Started.")
 
         self.quitMayaJobId = pm.scriptJob(event=("quitApplication",
-                                                 catchJobException(self.onQuitApplication)),
+                                                 safely(self.onQuitApplication)),
                                                  cu=True, kws=False)
         logMsg("QuitApplication Job Started.")
 
         self.sceneSavedJobId = pm.scriptJob(event=("SceneSaved",
-                                                   catchJobException(self.onSceneSaved)),
+                                                   safely(self.onSceneSaved)),
                                                    cu=True, kws=False)
         logMsg("SceneSaved Job Started.")
-
-        args = (om.MSceneMessage.kBeforeCreateReferenceCheck, self.onPreCreateReferenceCheck)
-        self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
-        logMsg("PreCreateReferenceCheck Callback Started.")
 
     def killScriptJobs(self):
 
@@ -178,13 +233,9 @@ class ToolSetup(object):
         self.sceneSavedJobId = pm.scriptJob(kill=self.sceneSavedJobId, force=True)
         logMsg("SceneSaved Job Killed.")
 
-        if self.preCreateRefCheckCbkId:
-            self.preCreateRefCheckCbkId = om.MSceneMessage.removeCallback(self.preCreateRefCheckCbkId)
-            logMsg("PreCreateReferenceCheck Callback Killed.")
 
     def beforeBuildingMenu(self):
-
-        logutils.logSeverity = self.getLogLevel()
+        #logutils.logSeverity = self.getLogLevel()
         return True
 
     def afterBuildingMenu(self):
@@ -270,6 +321,8 @@ class ToolSetup(object):
         self.afterBuildingMenu()
 
     def install(self):
+
+        self.startCallbacks()
 
         self.buildMenu()
 
