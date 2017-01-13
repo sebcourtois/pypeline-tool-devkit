@@ -11,7 +11,7 @@ import pymel.core; pm = pymel.core
 
 from pytd.util import logutils
 from pytd.util import sysutils
-from pytd.util.sysutils import hostApp, reloadModule, toStr
+from pytd.util.sysutils import reloadModule, toStr
 from pytd.util.logutils import logMsg
 
 
@@ -70,7 +70,9 @@ class ToolSetup(object):
 
         self.currentSceneName = None
 
-        logutils.logSeverity = self.getLogLevel()
+#        args = (om.MSceneMessage.kMayaInitialized, safely(self.onMayaInitialized))
+#        self.mayaInitializedCbkId = om.MSceneMessage.addCallback(*args)
+#        logMsg("MayaInitialized Callback Started.")
 
     def setLogLevel(self, *args):
         logutils.logSeverity = args[0]
@@ -80,8 +82,10 @@ class ToolSetup(object):
         return pm.optionVar.get("TD_logLevel", 0)
 
     def beforeReloading(self, *args):
-        self.killCallbacks()
-        self.killScriptJobs()
+        try:
+            self.killCallbacks()
+        finally:
+            self.killScriptJobs()
 
     def afterReloading(self, *args):
         sClsName = self.__class__.__name__
@@ -138,10 +142,6 @@ class ToolSetup(object):
     def startCallbacks(self):
 
         logMsg("Start Callbacks", log="debug")
-
-        args = (om.MSceneMessage.kMayaInitialized, safely(self.onMayaInitialized))
-        self.mayaInitializedCbkId = om.MSceneMessage.addCallback(*args)
-        logMsg("MayaInitialized Callback Started.")
 
         args = (om.MSceneMessage.kBeforeCreateReferenceCheck, safely(self.onPreCreateReferenceCheck, returns=True))
         self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
@@ -235,7 +235,8 @@ class ToolSetup(object):
 
 
     def beforeBuildingMenu(self):
-        #logutils.logSeverity = self.getLogLevel()
+        logutils.logSeverity = self.getLogLevel()
+        self.startCallbacks()
         return True
 
     def afterBuildingMenu(self):
@@ -312,8 +313,7 @@ class ToolSetup(object):
         if not self.beforeBuildingMenu():
             return
 
-        if hostApp() == "maya":
-
+        if not pm.about(batch=True):
             self.beginMenu()
             self.populateMenu()
             self.endMenu()
@@ -321,8 +321,6 @@ class ToolSetup(object):
         self.afterBuildingMenu()
 
     def install(self):
-
-        self.startCallbacks()
 
         self.buildMenu()
 
