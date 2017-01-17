@@ -113,17 +113,17 @@ class PyConfParser(object):
 
                     sPath = sCurPath
 
-                    if '@' in sPath:
-                        tokens = {}
-                        for f in set(findFmtFields(sPath)):
-                            if '@' not in f:
-                                continue
-                            v, k = f.split('@')
-                            tokens[k.strip()] = v.strip()
-
-                            sPath = sPath.replace(f, k)
-
-                        setattr(pyobj, sConfVar + "_tokens", tokens)
+#                    if '@' in sPath:
+#                        tokens = {}
+#                        for f in set(findFmtFields(sPath)):
+#                            if '@' not in f:
+#                                continue
+#                            v, k = f.split('@')
+#                            tokens[k.strip()] = v.strip()
+#
+#                            sPath = sPath.replace(f, k)
+#
+#                        setattr(pyobj, sConfVar + "_tokens", tokens)
 
                     if isinstance(childDct, dict):
                         sPath = addEndSlash(sPath)
@@ -154,22 +154,25 @@ class PyConfParser(object):
     def getVar(self, sSection, sVarName, default="NoEntry", **kwargs):
 
         bResVars = kwargs.pop("resVars", True)
+        inTokens = kwargs.pop("tokens", {})
 
         currConfobj = self.getSection(sSection)
         value = currConfobj._getSectionVar(sVarName, default, **kwargs)
 
-        if isinstance(value, basestring):
+        if not isinstance(value, basestring):
+            return value
 
-            sFieldSet = set(findFmtFields(value))
-            if not sFieldSet:
-                return value
+        sFieldSet = set(findFmtFields(value))
+        if not sFieldSet:
+            return value
 
+        #print "\n", "raw value:", value, sFieldSet
+
+        fields = copy(getattr(currConfobj._pyobj, sVarName + "_tokens", None))
+        if not fields:
             fields = {}
-            varTokens = {}
-            bHasSection = False
 
             for sField in sFieldSet:
-
                 sToken = ""
                 sValue = sField
                 if '@' in sField:
@@ -183,17 +186,19 @@ class PyConfParser(object):
                     if not sFieldSection:
                         sFieldSection = sSection
 
-                    bHasSection = True
-
                     confobj = self.getSection(sFieldSection)
                     pyobj = confobj._pyobj
-                    fields[sFieldSection] = pyobj
-                    sValue = getattr(pyobj, sFieldAttr)
-                else:
+
+                    if sToken:
+                        sValue = getattr(pyobj, sFieldAttr)
+                    else:
+                        fields[sFieldSection] = pyobj
+
+                elif not sToken:
                     fields[sValue] = "{" + sValue + "}"
 
                 if sToken:
-                    varTokens[sToken] = sValue
+                    #varTokens[sToken] = sValue
                     value = value.replace(sField, sToken)
                     if bResVars:
                         fields[sToken] = sValue
@@ -202,11 +207,21 @@ class PyConfParser(object):
 
                 #print sField, sValue, sToken
 
-            if varTokens:
-                setattr(currConfobj._pyobj, sVarName + "_tokens", varTokens)
+            if bResVars and fields:
+                #print sVarName + "_tokens", fields
+                setattr(currConfobj._pyobj, sVarName + "_tokens", fields)
+                setattr(currConfobj._pyobj, sVarName, value)
 
-            if bHasSection:
-                return value.format(**fields)
+        elif not bResVars:
+            return value
+
+        #print value
+        #print fields
+        if fields:
+            if inTokens:
+                fields.update(inTokens)
+
+            return value.format(**fields)
 
         return value
 
