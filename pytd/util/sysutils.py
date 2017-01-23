@@ -310,7 +310,7 @@ def hostSetEnvFunc():
 
     return func
 
-def updEnv(sVar, in_value, conflict='replace', usingFunc=None):
+def updEnv(sVar, in_value, conflict='replace', usingFunc=None, record=None):
 
     opts = ('add', 'replace', 'keep', 'fail')
     if conflict not in opts:
@@ -340,6 +340,9 @@ def updEnv(sVar, in_value, conflict='replace', usingFunc=None):
         usingFunc(sVar, newValue)
     else:
         os.environ[sVar] = newValue
+
+    if record is not None:
+        record[sVar] = newValue
 
 ''
 #===============================================================================
