@@ -3,6 +3,8 @@
 from PySide.QtCore import Qt, QFileInfo
 from PySide import QtGui
 
+from pytd.util.sysutils import qtGuiApp
+
 try:
     import shiboken
 except ImportError:
@@ -107,8 +109,8 @@ def setWaitCursor(func):
 
         bOverride = False
 
-        qApp = QtGui.QApplication.instance()
-        if qApp and (qApp.type() != QtGui.QApplication.Tty):
+        qApp = qtGuiApp()
+        if qApp:
             cursor = qApp.overrideCursor()
             if (not cursor) or (cursor.shape() != Qt.WaitCursor):
                 bOverride = True
