@@ -6,6 +6,7 @@ from copy import copy, deepcopy
 from pytd.util.sysutils import listClassesFromModule
 from pytd.util.fsutils import pathJoin, addEndSlash
 from pytd.util.strutils import findFmtFields
+from pytd.util.logutils import logMsg
 
 _SECTION_REXP = re.compile(r"{([\w]+)\.")
 
@@ -47,7 +48,7 @@ class PyConfParser(object):
         if self._errosOnInit:
             raise ImportError(self.formatedErrors(self._errosOnInit))
 
-    def _checkVar(self, sConfVar, expectedType, out_sErrorMsgList, **kwargs):
+    def _checkVar(self, sVarName, expectedType, out_sErrorMsgList, **kwargs):
 
         bDeepCopy = kwargs.pop("deepCopy", False)
         defaultValue = kwargs.pop("default", "NoEntry")
@@ -56,17 +57,17 @@ class PyConfParser(object):
         pyobj = self._pyobj
 
         try:
-            value = getattr(pyobj, sConfVar)
+            value = getattr(pyobj, sVarName)
         except AttributeError:
             if defaultValue == "NoEntry":
-                out_sErrorMsgList.append('"{0}" : Missing'.format(sConfVar))
+                out_sErrorMsgList.append('"{0}" : Missing'.format(sVarName))
                 return
             else:
                 value = defaultValue
                 bSetVar = True
 
         if not isinstance(value, expectedType):
-            msg = u'"{0}": Expected {1}, got {2}'.format(sConfVar, expectedType, type(value))
+            msg = u'"{0}": Expected {1}, got {2}'.format(sVarName, expectedType, type(value))
             out_sErrorMsgList.append(msg)
             return
 
@@ -76,7 +77,7 @@ class PyConfParser(object):
             copiedValue = copy(value)
 
         if bSetVar:
-            setattr(pyobj, sConfVar, copiedValue)
+            setattr(pyobj, sVarName, copiedValue)
 
         return copiedValue
 
@@ -85,10 +86,8 @@ class PyConfParser(object):
         if not predefVarParams:
             return
 
-        for sConfVar, varParams in predefVarParams:
-            self._checkVar(sConfVar,
-                           varParams["type"],
-                           self._errosOnInit,
+        for sVarName, varParams in predefVarParams:
+            self._checkVar(sVarName, varParams["type"], self._errosOnInit,
                            default=varParams.get("default", "NoEntry"))
 
     def recurseTreeVars(self, treeDct, sStartPath, parentConf=None):
@@ -98,17 +97,17 @@ class PyConfParser(object):
         for sDirVar, childDct in treeDct.iteritems():
 
             if "->" in sDirVar:
-                sDirName, sConfVar = sDirVar.split("->", 1)
+                sDirName, sVarName = sDirVar.split("->", 1)
             else:
                 sDirName = sDirVar
-                sConfVar = ""
+                sVarName = ""
 
             sCurPath = pathJoin(sStartPath, sDirName.strip())
 
-            if sConfVar:
-                sConfVar = sConfVar.strip()
+            if sVarName:
+                sVarName = sVarName.strip()
 
-                sPath = pyobj.__dict__.get(sConfVar, None)
+                sPath = pyobj.__dict__.get(sVarName, None)
                 if sPath is None:
 
                     sPath = sCurPath
@@ -123,19 +122,19 @@ class PyConfParser(object):
 #
 #                            sPath = sPath.replace(f, k)
 #
-#                        setattr(pyobj, sConfVar + "_tokens", tokens)
+#                        setattr(pyobj, sVarName + "_tokens", tokens)
 
                     if isinstance(childDct, dict):
                         sPath = addEndSlash(sPath)
                     
-                    setattr(pyobj, sConfVar, sPath)
+                    setattr(pyobj, sVarName, sPath)
 
                     sPathVarList = pyobj.__dict__.get("all_tree_vars", [])
-                    sPathVarList.append(sConfVar)
+                    sPathVarList.append(sVarName)
                     setattr(pyobj, "all_tree_vars", sPathVarList)
 
                 else:
-                    msg = u'"{0}" :  Already defined to "{1}"'.format(sConfVar, sPath)
+                    msg = u'"{0}" :  Already defined to "{1}"'.format(sVarName, sPath)
                     self._errosOnInit.append(msg)
                     continue
 
@@ -198,7 +197,6 @@ class PyConfParser(object):
                     fields[sValue] = "{" + sValue + "}"
 
                 if sToken:
-                    #varTokens[sToken] = sValue
                     value = value.replace(sField, sToken)
                     if bResVars:
                         fields[sToken] = sValue
@@ -206,21 +204,18 @@ class PyConfParser(object):
                         fields[sToken] = "{" + sToken + "}"
 
                 #print sField, sValue, sToken
-
             if bResVars and fields:
                 #print sVarName + "_tokens", fields
-                setattr(currConfobj._pyobj, sVarName + "_tokens", fields)
+                setattr(currConfobj._pyobj, sVarName + "_tokens", copy(fields))
                 setattr(currConfobj._pyobj, sVarName, value)
 
         elif not bResVars:
             return value
 
-        #print value
-        #print fields
         if fields:
             if inTokens:
+                fields = fields.copy()
                 fields.update(inTokens)
-
             return value.format(**fields)
 
         return value
