@@ -216,6 +216,7 @@ class PyConfParser(object):
             if inTokens:
                 fields = fields.copy()
                 fields.update(inTokens)
+
             return value.format(**fields)
 
         return value
@@ -237,8 +238,10 @@ class PyConfParser(object):
             except ValueError:
                 raise ValueError('Could not cast configuration variable to a dictionary: "{0}".'
                                  .format(sVarName))
-
-        return deepcopy(value)
+        try:
+            return deepcopy(value)
+        except TypeError:
+            return copy(value)
 
     def _sectionHasVar(self, sVarName):
         return hasattr(self._pyobj, sVarName)
