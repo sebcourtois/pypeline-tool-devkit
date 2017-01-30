@@ -348,7 +348,7 @@ _copy_action = {
 'symb': 'symbolically linking'}
 
 def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_place=False,
-             update=False, link="", verbose=1, dry_run=False, buffer_size=64 * 1024):
+             update=False, link="", verbose=1, dry_run=False, buffer_size=512 * 1024):
     """Copy a file 'sSrcPath' to 'sDstPath'. (Stolen and customized from distutils.file_util.copy_file)
 
     If 'sDstPath' is a directory, then 'sSrcPath' is copied there with the same name;
@@ -461,9 +461,14 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
     return (sDstPath, True)
 
 def copyFileData(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True,
-                 buffer_size=64 * 1024, sourceStat=None):
+                 buffer_size=512 * 1024, sourceStat=None):
 
     srcStat = sourceStat if sourceStat else os.stat(sSrcPath)
+
+    # Optimize the buffer for small files
+    buffer_size = min(buffer_size, srcStat.st_size)
+    if(buffer_size == 0):
+        buffer_size = 1024
 
     with open(sSrcPath, 'rb') as srcFobj:
         with open(sDstPath, 'wb') as dstFobj:
