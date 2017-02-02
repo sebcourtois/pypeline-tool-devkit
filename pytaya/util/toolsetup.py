@@ -67,12 +67,17 @@ class ToolSetup(object):
         self.mayaInitializedCbkId = None
         self.beforeNewCheckCbkId = None
         self.beforeOpenCheckCbkId = None
+        self.afterPluginLoadCbkId = None
 
         self.currentSceneName = None
+        self.mayaIsStarting = False
 
-#        args = (om.MSceneMessage.kMayaInitialized, safely(self.onMayaInitialized))
-#        self.mayaInitializedCbkId = om.MSceneMessage.addCallback(*args)
-#        logMsg("MayaInitialized Callback Started.")
+        logutils.logSeverity = self.getLogLevel()
+
+        if self.mayaInitializedCbkId is None:
+            args = (om.MSceneMessage.kMayaInitialized, safely(self.onMayaInitialized))
+            self.mayaInitializedCbkId = om.MSceneMessage.addCallback(*args)
+            logMsg("MayaInitialized Callback Started.")
 
     def setLogLevel(self, *args):
         logutils.logSeverity = args[0]
@@ -105,7 +110,25 @@ class ToolSetup(object):
 
     def onMayaInitialized(self, clientData=None):
         logMsg("Maya Initialized", log="callback")
+        #print "Maya Initialized".center(100, "!"), self.getLogLevel()
+
+        if not pm.about(batch=True):
+            self.mayaIsStarting = True
+            pm.scriptJob(event=("idle", safely(self.__onAfterMayaStart)),
+                                cu=True, kws=False, runOnce=True)
+
+        self.startCallbacks()
+        self.startScriptJobs()
+
         return True
+
+    def __onAfterMayaStart(self):
+        if self.mayaIsStarting:
+            self.mayaIsStarting = False
+            self.onAfterMayaStart()
+
+    def onAfterMayaStart(self):
+        logMsg("After Maya Started", log="callback")
 
     def onPostSceneRead(self, *args):
         logMsg("Post Scene Read", log="callback")
@@ -139,21 +162,32 @@ class ToolSetup(object):
         self.currentSceneName = osp.normpath(mFileObj.resolvedFullName()).replace("\\", "/")
         return True
 
+    def onAfterPluginLoad(self, pluginInfos, clientData=None):
+        logMsg("After Plugin Load", pluginInfos, log="callback")
+
     def startCallbacks(self):
 
         logMsg("Start Callbacks", log="debug")
 
-        args = (om.MSceneMessage.kBeforeCreateReferenceCheck, safely(self.onPreCreateReferenceCheck, returns=True))
-        self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
-        logMsg("PreCreateReferenceCheck Callback Started.")
+        if self.preCreateRefCheckCbkId is None:
+            args = (om.MSceneMessage.kBeforeCreateReferenceCheck, safely(self.onPreCreateReferenceCheck, returns=True))
+            self.preCreateRefCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
+            logMsg("kBeforeCreateReferenceCheck Callback Started.")
 
-        args = (om.MSceneMessage.kBeforeNewCheck, safely(self.onBeforeNewCheck, returns=True))
-        self.beforeNewCheckCbkId = om.MSceneMessage.addCheckCallback(*args)
-        logMsg("BeforeNewCheck Callback Started.")
+        if self.beforeNewCheckCbkId is None:
+            args = (om.MSceneMessage.kBeforeNewCheck, safely(self.onBeforeNewCheck, returns=True))
+            self.beforeNewCheckCbkId = om.MSceneMessage.addCheckCallback(*args)
+            logMsg("kBeforeNewCheck Callback Started.")
 
-        args = (om.MSceneMessage.kBeforeOpenCheck, safely(self.onBeforeOpenCheck, returns=True))
-        self.beforeOpenCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
-        logMsg("BeforeOpenCheck Callback Started.")
+        if self.beforeOpenCheckCbkId is None:
+            args = (om.MSceneMessage.kBeforeOpenCheck, safely(self.onBeforeOpenCheck, returns=True))
+            self.beforeOpenCheckCbkId = om.MSceneMessage.addCheckFileCallback(*args)
+            logMsg("kBeforeOpenCheck Callback Started.")
+
+#        if self.afterPluginLoadCbkId is None:
+#            args = (om.MSceneMessage.kAfterPluginLoad, safely(self.onAfterPluginLoad))
+#            self.afterPluginLoadCbkId = om.MSceneMessage.addStringArrayCallback(*args)
+#            logMsg("kAfterPluginLoad Callback Started.")
 
     def killCallbacks(self):
 
@@ -163,15 +197,19 @@ class ToolSetup(object):
 
         if self.preCreateRefCheckCbkId:
             self.preCreateRefCheckCbkId = om.MSceneMessage.removeCallback(self.preCreateRefCheckCbkId)
-            logMsg("PreCreateReferenceCheck Callback Killed.")
+            logMsg("kBeforeCreateReferenceCheck Callback Killed.")
 
         if self.beforeNewCheckCbkId:
             self.beforeNewCheckCbkId = om.MSceneMessage.removeCallback(self.beforeNewCheckCbkId)
-            logMsg("BeforeNewCheck Callback Killed.")
+            logMsg("kBeforeNewCheck Callback Killed.")
 
         if self.beforeOpenCheckCbkId:
             self.beforeOpenCheckCbkId = om.MSceneMessage.removeCallback(self.beforeOpenCheckCbkId)
-            logMsg("BeforeOpenCheck Callback Killed.")
+            logMsg("kBeforeOpenCheck Callback Killed.")
+
+#        if self.afterPluginLoadCbkId:
+#            self.afterPluginLoadCbkId = om.MSceneMessage.removeCallback(self.afterPluginLoadCbkId)
+#            logMsg("kAfterPluginLoad Callback Killed.")
 
     def startScriptJobs(self):
 
@@ -180,35 +218,41 @@ class ToolSetup(object):
 
         logMsg("Start ScriptJobs", log="debug")
 
-        self.postSceneReadJobId = pm.scriptJob(event=("PostSceneRead",
-                                                      safely(self.onPostSceneRead)),
-                                                      cu=True, kws=False)
-        logMsg("PostSceneRead Job Started.")
+        if self.postSceneReadJobId is None:
+            self.postSceneReadJobId = pm.scriptJob(event=("PostSceneRead",
+                                                          safely(self.onPostSceneRead)),
+                                                          cu=True, kws=False)
+            logMsg("PostSceneRead Job Started.")
 
-        self.newSceneOpenedJobId = pm.scriptJob(event=("NewSceneOpened",
-                                                       safely(self.onNewSceneOpened)),
+        if self.newSceneOpenedJobId is None:
+            self.newSceneOpenedJobId = pm.scriptJob(event=("NewSceneOpened",
+                                                           safely(self.onNewSceneOpened)),
+                                                           cu=True, kws=False)
+            logMsg("NewSceneOpened Job Started.")
+
+        if self.sceneOpenedJobId is None:
+            self.sceneOpenedJobId = pm.scriptJob(event=("SceneOpened",
+                                                        safely(self.onSceneOpened)),
+                                                        cu=True, kws=False)
+            logMsg("SceneOpened Job Started.")
+
+        if self.preNewOrOpenedJobId is None:
+            self.preNewOrOpenedJobId = pm.scriptJob(event=("PreFileNewOrOpened",
+                                                           safely(self.onPreFileNewOrOpened)),
+                                                           cu=True, kws=False)
+            logMsg("PreNewFileOrOpened Job Started.")
+
+        if self.quitMayaJobId is None:
+            self.quitMayaJobId = pm.scriptJob(event=("quitApplication",
+                                                     safely(self.onQuitApplication)),
+                                                     cu=True, kws=False)
+            logMsg("QuitApplication Job Started.")
+
+        if self.sceneSavedJobId is None:
+            self.sceneSavedJobId = pm.scriptJob(event=("SceneSaved",
+                                                       safely(self.onSceneSaved)),
                                                        cu=True, kws=False)
-        logMsg("NewSceneOpened Job Started.")
-
-        self.sceneOpenedJobId = pm.scriptJob(event=("SceneOpened",
-                                                    safely(self.onSceneOpened)),
-                                                    cu=True, kws=False)
-        logMsg("SceneOpened Job Started.")
-
-        self.preNewOrOpenedJobId = pm.scriptJob(event=("PreFileNewOrOpened",
-                                                       safely(self.onPreFileNewOrOpened)),
-                                                       cu=True, kws=False)
-        logMsg("PreNewFileOrOpened Job Started.")
-
-        self.quitMayaJobId = pm.scriptJob(event=("quitApplication",
-                                                 safely(self.onQuitApplication)),
-                                                 cu=True, kws=False)
-        logMsg("QuitApplication Job Started.")
-
-        self.sceneSavedJobId = pm.scriptJob(event=("SceneSaved",
-                                                   safely(self.onSceneSaved)),
-                                                   cu=True, kws=False)
-        logMsg("SceneSaved Job Started.")
+            logMsg("SceneSaved Job Started.")
 
     def killScriptJobs(self):
 
@@ -235,13 +279,9 @@ class ToolSetup(object):
 
 
     def beforeBuildingMenu(self):
-        logutils.logSeverity = self.getLogLevel()
-        self.startCallbacks()
         return True
 
     def afterBuildingMenu(self):
-
-        self.startScriptJobs()
 
         sMuteModList = ["requests.packages.urllib3.connectionpool",
                         "pytd.util.external.parse",
@@ -302,7 +342,6 @@ class ToolSetup(object):
                                 radioButton=(logutils.logSeverity == 3),
                                 c=partial(self.setLogLevel, 3))
 
-
                 pm.menuItem(label="Urllib3 Logging", c=setUrllib3LoggingEnabled, cb=False)
 
             pm.menuItem(divider=True)
@@ -321,6 +360,9 @@ class ToolSetup(object):
         self.afterBuildingMenu()
 
     def install(self):
+
+        self.startCallbacks()
+        self.startScriptJobs()
 
         self.buildMenu()
 
