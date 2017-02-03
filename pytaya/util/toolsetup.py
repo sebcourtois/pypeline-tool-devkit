@@ -4,10 +4,11 @@ import os.path as osp
 import traceback
 from functools import partial
 import logging
-
+from pprint import pprint
 
 from maya.api import OpenMaya as om
-import pymel.core; pm = pymel.core
+
+import pymel.core as pm
 
 from pytd.util import logutils
 from pytd.util import sysutils
@@ -114,32 +115,30 @@ class ToolSetup(object):
         logMsg("Maya Initialized", log="callback")
         #print "Maya Initialized".center(100, "!"), self.getLogLevel()
 
-        if not pm.about(batch=True):
-            self.mayaIsStarting = True
-#            if self.afterMayaStartJobId is None:
-#                self.afterMayaStartJobId = pm.scriptJob(event=("idle", safely(self.__onAfterMayaStart)),
-#                                                        cu=False, kws=True, runOnce=True,
-#                                                        permanent=False)
+        self.mayaIsStarting = True
+
         self.startCallbacks()
         self.startScriptJobs()
 
         return True
 
     def __onAfterMayaStart(self):
-        if self.mayaIsStarting:
-            self.mayaIsStarting = False
-#            if self.afterMayaStartJobId:
-#                self.afterMayaStartJobId = pm.scriptJob(kill=self.afterMayaStartJobId, force=True)
-            self.onAfterMayaStart()
+        self.mayaIsStarting = False
+        self.onAfterMayaStart()
 
     def onAfterMayaStart(self):
         logMsg("After Maya Started", log="callback")
+        #print "After Maya Started".center(100, "!")
 
     def onPostSceneRead(self, *args):
         logMsg("Post Scene Read", log="callback")
 
     def onNewSceneOpened(self, *args):
         logMsg("New Scene Opened", log="callback")
+
+        if self.mayaIsStarting:
+            pm.evalDeferred(safely(self.__onAfterMayaStart))
+            #pprint(pm.evalDeferred(ls=True))
 
     def onSceneOpened(self, *args):
         logMsg("Scene Opened", log="callback")
@@ -364,12 +363,20 @@ class ToolSetup(object):
 
         self.afterBuildingMenu()
 
-    def install(self):
+    def loadPlugins(self):
+        return
+
+    def install(self, loadPlugins=True):
+
+        m = sys.modules["__main__"]
+        sClsName = self.__class__.__name__
+        setattr(m, sClsName[0].lower() + sClsName[1:], self)
 
         self.startCallbacks()
         self.startScriptJobs()
 
         self.buildMenu()
 
-        m = sys.modules["__main__"]
-        m.TOOL_SETUP = self
+        if loadPlugins:
+            self.loadPlugins()
+
