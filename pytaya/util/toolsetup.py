@@ -63,6 +63,8 @@ class ToolSetup(object):
         self.sceneOpenedJobId = None
         self.preNewOrOpenedJobId = None
         self.sceneSavedJobId = None
+        self.afterMayaStartJobId = None
+
         self.preCreateRefCheckCbkId = None
         self.mayaInitializedCbkId = None
         self.beforeNewCheckCbkId = None
@@ -114,9 +116,10 @@ class ToolSetup(object):
 
         if not pm.about(batch=True):
             self.mayaIsStarting = True
-            pm.scriptJob(event=("idle", safely(self.__onAfterMayaStart)),
-                                cu=True, kws=False, runOnce=True)
-
+#            if self.afterMayaStartJobId is None:
+#                self.afterMayaStartJobId = pm.scriptJob(event=("idle", safely(self.__onAfterMayaStart)),
+#                                                        cu=False, kws=True, runOnce=True,
+#                                                        permanent=False)
         self.startCallbacks()
         self.startScriptJobs()
 
@@ -125,6 +128,8 @@ class ToolSetup(object):
     def __onAfterMayaStart(self):
         if self.mayaIsStarting:
             self.mayaIsStarting = False
+#            if self.afterMayaStartJobId:
+#                self.afterMayaStartJobId = pm.scriptJob(kill=self.afterMayaStartJobId, force=True)
             self.onAfterMayaStart()
 
     def onAfterMayaStart(self):
