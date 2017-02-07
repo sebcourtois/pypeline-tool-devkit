@@ -154,3 +154,23 @@ def copyAttrState(srcNode, destNode , *sAttrList):
                        k=mc.getAttr(sSrcNodeAttr, k=True),
                        l=mc.getAttr(sSrcNodeAttr, l=True),
                        cb=mc.getAttr(sSrcNodeAttr, cb=True))
+
+def iterRenderLayerOverrides(sLayerName):
+
+    for idx in listForNone(mc.getAttr(sLayerName + ".adjustments", multiIndices=True)):
+
+        sLyrAttr = sLayerName + ".adjustments[{}]".format(idx)
+        sInAttrList = mc.listConnections(sLyrAttr + ".plug", s=True, d=False, plugs=True)
+        if not sInAttrList:
+            continue
+
+        sInPlugAttr = sInAttrList[0]
+
+        sInAttrList = mc.listConnections(sLyrAttr + ".value", s=True, d=False, plugs=True)
+        if sInAttrList:
+            value = sInAttrList[0]
+        else:
+            value = mc.getAttr(sLyrAttr + ".value")
+
+        yield (sInPlugAttr, value)
+
