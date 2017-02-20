@@ -22,6 +22,9 @@ def isJunkShape(shape, **kwargs):
     if not mc.objectType(sShapePath, isAType="shape"):
         raise TypeError, 'Object is not a shape: "{0}"'.format(sShapePath)
 
+    if mc.referenceQuery(sShapePath, isNodeReferenced=True):
+        return False
+
     if bCheckAttr and (not mc.getAttr(sShapePath + ".intermediateObject")):
         return False
 
