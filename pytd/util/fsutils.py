@@ -113,12 +113,18 @@ def pathJoin(*args):
 
 def pathResolve(p, recursive=True):
 
-    rp = osp.expanduser(osp.expandvars(p))
+    res = osp.expanduser(osp.expandvars(p))
 
-    if recursive and (rp != p) and re.findall(r'[%$]', rp):
-        return pathResolve(rp)
+    if ":" in res:
+        sDrive, sTail = res.split(":", 1)
+        sUncPath = os.environ.get(sDrive.upper() + "_DRIVE_UNC_PATH")
+        if sUncPath:
+            res = pathNorm(sUncPath) + sTail
 
-    return rp
+    if recursive and (res != p) and re.findall(r'[%$]', res):
+        return pathResolve(res)
+
+    return res
 
 def pathSuffixed(sFileNameOrPath, *suffixes):
 

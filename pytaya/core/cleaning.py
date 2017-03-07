@@ -81,7 +81,8 @@ def deleteAllJunkShapes(dryRun=False):
         logMsg("\nNo junk shapes found.")
         return
 
-    logMsg("\nRemoving junk shapes... \n\t{0}".format("\n\tdelete junk shape: ".join(sJunkShapeList)))
+    sSep = "\n    delete junk shape: "
+    logMsg("\nRemoving junk shapes...{}{}".format(sSep, sSep.join(sJunkShapeList)))
 
     if not dryRun:
         mc.delete(sJunkShapeList)
