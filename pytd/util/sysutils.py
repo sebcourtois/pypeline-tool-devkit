@@ -259,12 +259,11 @@ def qtGuiApp():
     qApp = qtApp()
     return qApp if isQtGui(qApp) else None
 
-def isQtGui(qApp=None):
+def isQtGui(in_qApp=None):
 
+    qApp = in_qApp if in_qApp else qtApp()
     if not qApp:
-        qApp = qtApp()
-        if not qApp:
-            return False
+        return False
 
     from PySide import QtGui
 
@@ -274,17 +273,14 @@ def isQtGui(qApp=None):
     return (qApp.type() != QtGui.QApplication.Tty)
 
 def qtApp():
-
-    qApp = None
-
     try:
         from PySide import QtGui
     except ImportError:
-        return False
-    else:
-        qApp = QtGui.qApp
-        if not qApp:
-            qApp = QtGui.QApplication.instance()
+        return
+
+    qApp = QtGui.qApp
+    if not qApp:
+        qApp = QtGui.QApplication.instance()
 
     return qApp
 
