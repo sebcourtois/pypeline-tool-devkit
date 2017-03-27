@@ -1,4 +1,5 @@
 
+import sys
 import os
 import os.path as osp
 import re
@@ -6,15 +7,23 @@ import fnmatch
 import json
 import hashlib
 import codecs
+import traceback
+from time import time
 from stat import ST_ATIME, ST_MTIME, ST_MODE, S_IMODE, S_IFMT
 from stat import S_IFREG, S_ISDIR, S_ISREG
 
+PYSIDE_FOUND = True
+try:
+    from PySide import QtGui, QtCore
+except ImportError:
+    PYSIDE_FOUND = False
 
 from pytd.util.external import parse
-from pytd.util.sysutils import toUnicode, argToList, toStr
+from pytd.util.sysutils import toUnicode, argToList, toStr, qtGuiApp, timer
 from pytd.util.logutils import logMsg
 from pytd.util.systypes import MemSize
 from pytd.util.sysutils import SYSTEM_ENCODING, hostApp
+from pytd.util.qtutils import getTopWidget
 
 
 def isDirStat(statobj):
@@ -354,7 +363,7 @@ _copy_action = {
 'symb': 'symbolically linking'}
 
 def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_place=False,
-             update=False, link="", verbose=1, dry_run=False, buffer_size=512 * 1024):
+             update=False, link="", verbose=1, dry_run=False, buffer_size=512 * 1024, showProgress=True):
     """Copy a file 'sSrcPath' to 'sDstPath'. (Stolen and customized from distutils.file_util.copy_file)
 
     If 'sDstPath' is a directory, then 'sSrcPath' is copied there with the same name;
@@ -455,7 +464,7 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
     try:
         copyFileData(sSrcPath, sCopyPath,
                      preserve_mode=preserve_mode, preserve_times=preserve_times,
-                     buffer_size=buffer_size, sourceStat=srcStat)
+                     buffer_size=buffer_size, sourceStat=srcStat, showProgress=showProgress)
         if sTmpPath:
             if os.name == "nt": # on nt platform, destination must be removed first
                 os.remove(sDstPath)
@@ -467,22 +476,44 @@ def copyFile(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True, in_pla
     return (sDstPath, True)
 
 def copyFileData(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True,
-                 buffer_size=512 * 1024, sourceStat=None):
+                 buffer_size=512 * 1024, sourceStat=None, showProgress=False):
 
     srcStat = sourceStat if sourceStat else os.stat(sSrcPath)
+    srcSize = srcStat.st_size
 
     # Optimize the buffer for small files
-    buffer_size = min(buffer_size, srcStat.st_size)
-    if(buffer_size == 0):
-        buffer_size = 1024
+    bufferSize = min(buffer_size, srcSize)
+    if bufferSize == 0:
+        bufferSize = 1024
+        numChunks = 1
+    else:
+        numChunks = srcSize / bufferSize
 
-    with open(sSrcPath, 'rb') as srcFobj:
-        with open(sDstPath, 'wb') as dstFobj:
+    showProgress = (showProgress and (numChunks >= 100))
+    if showProgress:
+        progress = CopyProgress(srcSize, sSrcPath)
+
+    copiedSize = 0
+    with open(sSrcPath, 'rb') as srcFile:
+        with open(sDstPath, 'wb') as dstFile:
             while True:
-                buf = srcFobj.read(buffer_size)
-                if not buf:
-                    break
-                dstFobj.write(buf)
+                try:
+                    buf = srcFile.read(bufferSize)
+                    if not buf:
+                        break
+                    dstFile.write(buf)
+    
+                    if showProgress:
+                        copiedSize += len(buf)
+                        try:
+                            progress.update(copiedSize)
+                        except:
+                            traceback.print_exc()
+                            showProgress = False
+                except:
+                    if showProgress:
+                        progress.closeDialog()
+                    raise
 
     if preserve_mode or preserve_times:
         # According to David Ascher <da@ski.org>, utime() should be done
@@ -499,6 +530,118 @@ def copyFileData(sSrcPath, sDstPath, preserve_mode=True, preserve_times=True,
         raise IOError("Incomplete copy: {}/{} bytes copied.".format(dstSize, srcSize))
 
     return True
+
+if PYSIDE_FOUND and "CopyProgress" in globals():
+    tmpDlg = globals()["CopyProgress"].dialog
+    if tmpDlg:
+        tmpDlg.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        tmpDlg.done(0)
+        del tmpDlg
+
+class CopyProgress(object):
+
+    dialog = None
+
+    def __init__(self, sourceSize, sourcePath, latency=0.0):
+
+        self.sourceSize = sourceSize
+        self.sourcePath = sourcePath
+        self.latency = latency
+
+        self.progressLineTmp = ""
+        self.percentage = 0
+        self.showProgress = (latency == 0.0)
+        self.progressShown = False
+
+        self.startTime = None
+
+    def __start(self):
+
+        qApp = qtGuiApp()
+        if qApp:
+            bDialogCreated=False
+            dialog = self.__class__.dialog
+            if not dialog:
+                bDialogCreated = True                
+                dialog = QtGui.QProgressDialog(getTopWidget(qApp))
+                dialog.setWindowModality(QtCore.Qt.WindowModal)
+                dialog.setCancelButton(None)
+
+            dialog.setLabelText("Copying {}".format(self.sourcePath))
+            dialog.setMinimum(0)
+            dialog.setMaximum(self.sourceSize)
+            
+            if not bDialogCreated:
+                dialog.reset()
+
+        self.__class__.dialog = dialog
+        self.startTime = time()
+
+    def __update(self, copiedSize):
+
+        if self.startTime is None:
+            self.__start()
+
+        sourceSize = self.sourceSize
+        bDone = (copiedSize == sourceSize)
+
+        startTime = self.startTime
+        dialog = self.__class__.dialog
+
+        bShowProgress = self.showProgress
+        bProgressShown = self.progressShown
+        sProgessTmp = self.progressLineTmp
+
+        if (not bDone) and (not bShowProgress):
+            elapsed = (time() - startTime)
+            if (elapsed > self.latency):
+                copySpeed = copiedSize / elapsed
+                estimTime = (sourceSize - copiedSize) / copySpeed
+                #print 'estim = {:f} sec'.format(estimTime)
+                if estimTime >= 5.0:
+                    bShowProgress = True
+
+        if dialog:
+            if bDone:
+                dialog.setValue(sourceSize)
+            elif bShowProgress:
+                dialog.setValue(copiedSize)
+                bProgressShown = True
+
+        if bDone:
+            if bProgressShown:
+                copySpeed = MemSize(copiedSize / (time() - startTime))
+                print " {:.2cM} at {:.2cM}/sec".format(MemSize(copiedSize),
+                                                       copySpeed)
+        else:
+            curPercent = copiedSize * 100 / sourceSize
+            if curPercent > self.percentage:
+                self.percentage = curPercent
+                if bShowProgress:
+                    bProgressShown = True
+                    if sProgessTmp:
+                        sys.stdout.write(sProgessTmp + '.')
+                        self.progressLineTmp = ""
+                    else:
+                        sys.stdout.write('.')
+                    sys.stdout.flush()
+                else:
+                    self.progressLineTmp += "."
+
+        self.showProgress = bShowProgress
+        self.progressShown = bProgressShown
+
+    def update(self, *args, **kwargs):
+        try:
+            self.__update(*args, **kwargs)
+        except:
+            self.closeDialog()
+            raise
+
+    def closeDialog(self):
+        dlg = self.__class__.dialog
+        if dlg:
+            dlg.setValue(dlg.maximum())
 
 def pathNewer(sSrcPath, sDstPath):
     """Tells if the sDstPath is newer than the sSrcPath.

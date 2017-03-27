@@ -18,16 +18,28 @@ _qTransformModeDct = {
 "smooth":Qt.SmoothTransformation
 }
 
+def getTopWidget(in_qApp=None):
+
+    qApp = in_qApp if in_qApp else qtGuiApp()
+    if not qApp:
+        return
+
+    topWidgets = tuple(w for w in qApp.topLevelWidgets() if isTopWidget(w))
+    if not topWidgets:
+        return
+    
+    return topWidgets[0]
+
+def isTopWidget(w):
+    return (type(w) in (QtGui.QWidget, QtGui.QMainWindow)) and (not (w.isHidden() or w.parent()))
+
 def getWidget(sWidgetName="", **kwargs):
 
     bWithFocus = kwargs.pop("withFocus", kwargs.pop("wf", False))
 
     if bWithFocus:
-
         return QtGui.qApp.focusWidget()
-
     else:
-
         if not sWidgetName:
             raise ValueError, 'Invalid input widget name to get: "{0}"'.format(sWidgetName)
 
