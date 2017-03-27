@@ -681,8 +681,8 @@ def jsonWrite(p, pyobj, ensure_ascii=False, indent=2, encoding=SYSTEM_ENCODING, 
 
 def jsonRead(p, **kwargs):
 
-    if not osp.isfile(p):
-        raise EnvironmentError("No such file: '{}'".format(p))
+#    if not osp.isfile(p):
+#        raise EnvironmentError("No such file: '{}'".format(p))
 
     with open(p, 'rb') as fileobj:
         pyobj = json.load(fileobj, **kwargs)
