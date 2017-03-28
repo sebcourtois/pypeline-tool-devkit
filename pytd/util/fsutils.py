@@ -542,7 +542,7 @@ class CopyProgress(object):
 
     dialog = None
 
-    def __init__(self, sourceSize, sourcePath, latency=0.0):
+    def __init__(self, sourceSize, sourcePath, latency=3.0):
 
         self.sourceSize = sourceSize
         self.sourcePath = sourcePath
