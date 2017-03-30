@@ -557,10 +557,12 @@ class CopyProgress(object):
 
     def __start(self):
 
+        dialog = None
+
         qApp = qtGuiApp()
         if qApp:
-            bDialogCreated=False
             dialog = self.__class__.dialog
+            bDialogCreated = False
             if not dialog:
                 bDialogCreated = True                
                 dialog = QtGui.QProgressDialog(getTopWidget(qApp))
